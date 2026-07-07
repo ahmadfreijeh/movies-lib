@@ -2,6 +2,11 @@
 
 A full-stack movie library application for cataloging, browsing, and managing movies.
 
+## Live Demo
+
+- Frontend: https://book-library-frontend-xltc.onrender.com
+- Backend API: https://book-library-backend-18ug.onrender.com
+
 ## Tech Stack
 
 **Frontend**
