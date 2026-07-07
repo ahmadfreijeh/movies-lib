@@ -6,6 +6,7 @@ import YAML from "yaml";
 import { env } from "./config/env";
 import { corsMiddleware } from "./middleware/cors";
 import { requestLogger } from "./middleware/requestLogger";
+import { requireDocsAuth } from "./middleware/docsAuth";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
 import routes from "./routes";
 
@@ -22,7 +23,12 @@ app.get("/health", (_req, res) => {
 const openapiDocument = YAML.parse(
   fs.readFileSync(path.join(__dirname, "..", "docs", "openapi.yaml"), "utf8"),
 );
-app.use("/api/docs", swaggerUi.serve, swaggerUi.setup(openapiDocument));
+app.use(
+  "/api/docs",
+  requireDocsAuth,
+  swaggerUi.serve,
+  swaggerUi.setup(openapiDocument),
+);
 
 app.use("/api", routes);
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { Film } from "lucide-react";
+import { Film, SearchX } from "lucide-react";
 import {
   useGroupedMovies,
   useInfiniteMovies,
@@ -101,6 +101,15 @@ export default function PublicHomePage() {
     setReleaseYearTo(undefined);
   };
 
+  const clearAllFilters = () => {
+    setSearch("");
+    resetFilters();
+  };
+
+  const hasMovies =
+    isGroupedLoading ||
+    (groupedData?.some((g) => g.movies.items.length > 0) ?? true);
+
   return (
     <div className="flex min-h-screen flex-col">
       <header className="border-b bg-background">
@@ -186,7 +195,22 @@ export default function PublicHomePage() {
                   <div ref={loadMoreRef} className="h-1" />
                 </>
               ) : (
-                <p className="text-muted-foreground">No movies found.</p>
+                <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
+                  <SearchX className="h-10 w-10 text-muted-foreground/50" />
+                  <div>
+                    <p className="font-medium">No movies match your search</p>
+                    <p className="text-sm text-muted-foreground">
+                      Try adjusting your search or filters.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={clearAllFilters}
+                    className="text-sm font-medium text-primary hover:underline"
+                  >
+                    Clear all filters
+                  </button>
+                </div>
               )}
             </div>
           ) : isGroupedLoading ? (
@@ -195,7 +219,7 @@ export default function PublicHomePage() {
                 <MovieSliderRowSkeleton key={i} />
               ))}
             </div>
-          ) : (
+          ) : hasMovies ? (
             <div className="flex flex-col gap-8">
               {groupedData?.map((genreMovies) => (
                 <MovieSliderRow
@@ -204,6 +228,16 @@ export default function PublicHomePage() {
                   onMovieClick={(m) => setSelectedMovieId(m.id)}
                 />
               ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center gap-3 py-24 text-center">
+              <Film className="h-10 w-10 text-muted-foreground/50" />
+              <div>
+                <p className="font-medium">No movies yet</p>
+                <p className="text-sm text-muted-foreground">
+                  Check back later — new titles will show up here.
+                </p>
+              </div>
             </div>
           )}
         </div>

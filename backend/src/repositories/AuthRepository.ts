@@ -40,7 +40,9 @@ export class AuthRepository {
     return prisma.user.create({
       data: {
         ...rest,
-        ...(permissions?.length ? { permissions: { create: permissions } } : {}),
+        ...(permissions?.length
+          ? { permissions: { create: permissions } }
+          : {}),
       },
     });
   }

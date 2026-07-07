@@ -63,12 +63,24 @@ Other useful backend scripts:
 
 ```bash
 npm run prisma:studio  # browse the database
-npm run prisma:seed    # seed sample data
+npm run prisma:seed    # seed sample data (500 movies by default)
 npm run build && npm start  # production build/run
 npm run lint
 ```
 
-The API runs on `http://localhost:5050`. Interactive API docs (Swagger UI) are available at `http://localhost:5050/api/docs`.
+`npm run prisma:seed` runs [`backend/prisma/seed.ts`](backend/prisma/seed.ts), which looks for an
+existing "Test Org" organization/user (see [`backend/prisma/seeders`](backend/prisma/seeders)) rather
+than creating one, and seeds movies against it. Pass a sub-command to seed a specific slice instead of
+everything:
+
+```bash
+npm run prisma:seed genres        # seed genres only
+npm run prisma:seed movies 100    # seed 100 movies (default: 500)
+```
+
+The API runs on `http://localhost:5050`. Interactive API docs (Swagger UI) are available at
+`http://localhost:5050/api/docs`, protected by a browser Basic Auth prompt — sign in with
+username `admin` and password `admin`.
 
 ### Frontend
 
@@ -94,6 +106,14 @@ docker-compose up --build
 ```
 
 Spins up PostgreSQL, the backend API, and the frontend together.
+
+### Deploying to Render
+
+[`render.yaml`](render.yaml) is a Render Blueprint that provisions a free Postgres database plus two
+separate Docker web services from this same repo — `book-library-backend` (`rootDir: backend`) and
+`book-library-frontend` (`rootDir: frontend`). Each service's `buildFilter.paths` is scoped to its own
+folder, so pushing a commit only redeploys the service whose folder actually changed. See
+[DECISIONS.md](DECISIONS.md) for more on this setup.
 
 ## API Routes
 
