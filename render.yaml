@@ -35,10 +35,7 @@ services:
       - key: PORT
         value: 5050
       - key: FRONTEND_URL
-        fromService:
-          type: web
-          name: book-library-frontend
-          property: host
+        sync: false
       - key: R2_ACCOUNT_ID
         sync: false
       - key: R2_ACCESS_KEY_ID
@@ -62,7 +59,4 @@ services:
         - frontend/**
     envVars:
       - key: NEXT_PUBLIC_API_URL
-        fromService:
-          type: web
-          name: book-library-backend
-          property: host
+        sync: false
