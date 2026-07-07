@@ -17,8 +17,10 @@ import { DataTable } from "@/components/widgets/DataTable";
 import { ConfirmDialog } from "@/components/widgets/ConfirmDialog";
 import { MovieFilterPanel } from "@/components/widgets/MovieFilterPanel";
 import { RowActionsMenu } from "@/components/widgets/RowActionsMenu";
+import { MovieDetailsDrawer } from "@/components/widgets/MovieDetailsDrawer";
+import { useAuth } from "@/providers/AuthProvider";
 import { Movie } from "@/lib/types";
-import { getErrorMessage } from "@/lib/utils";
+import { getErrorMessage, hasPermission } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Sheet,
@@ -99,6 +101,10 @@ const columns: ColumnDef<Movie>[] = [
 
 export default function MoviesPage() {
   const router = useRouter();
+  const { profile } = useAuth();
+  const canCreate = hasPermission(profile, "MOVIE", "CREATE");
+  const canEdit = hasPermission(profile, "MOVIE", "EDIT");
+  const canDelete = hasPermission(profile, "MOVIE", "DELETE");
   const [search, setSearch] = useState("");
   const [genres, setGenres] = useState<string[]>([]);
   const [status, setStatus] = useState<"active" | "archived" | "all">("active");
@@ -108,6 +114,7 @@ export default function MoviesPage() {
   const [pendingMovie, setPendingMovie] = useState<Movie | null>(null);
   const [movieToDelete, setMovieToDelete] = useState<Movie | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [selectedMovieId, setSelectedMovieId] = useState<string | null>(null);
 
   const debouncedSearch = useDebouncedValue(search, 1000);
 
@@ -179,7 +186,7 @@ export default function MoviesPage() {
           setPage(1);
         }}
         searchPlaceholder="Search movies..."
-        createHref="/movies/create"
+        createHref={canCreate ? "/movies/create" : undefined}
         createLabel="Create Movie"
         filters={
           <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
@@ -237,15 +244,27 @@ export default function MoviesPage() {
         page={data?.page ?? page}
         totalPages={data?.totalPages ?? 1}
         onPageChange={setPage}
-        getRowHref={(movie) => `/movies/${movie.id}`}
-        renderRowActions={(movie) => (
-          <RowActionsMenu
-            archiveLabel={movie.archivedAt ? "Reactivate" : "Archive"}
-            onEdit={() => router.push(`/movies/${movie.id}/edit`)}
-            onArchive={() => setPendingMovie(movie)}
-            onDelete={() => setMovieToDelete(movie)}
-          />
-        )}
+        onRowClick={(movie) => setSelectedMovieId(movie.id)}
+        renderRowActions={
+          canEdit || canDelete
+            ? (movie) => (
+                <RowActionsMenu
+                  showEdit={canEdit}
+                  showArchive={canDelete}
+                  showDelete={canDelete}
+                  archiveLabel={movie.archivedAt ? "Reactivate" : "Archive"}
+                  onEdit={() => router.push(`/movies/${movie.id}/edit`)}
+                  onArchive={() => setPendingMovie(movie)}
+                  onDelete={() => setMovieToDelete(movie)}
+                />
+              )
+            : undefined
+        }
+      />
+
+      <MovieDetailsDrawer
+        movieId={selectedMovieId}
+        onOpenChange={(open) => !open && setSelectedMovieId(null)}
       />
 
       <ConfirmDialog

@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { loginRequest, signupRequest } from "@/apis/auth.api";
+import { acceptInvitationRequest, loginRequest, signupRequest } from "@/apis/auth.api";
+import { AcceptInvitationPayload } from "@/lib/types";
 import { clearAuthTokens, setAuthTokens, setAuthUser } from "@/lib/utils";
 
 export function useLogin() {
@@ -15,6 +16,16 @@ export function useLogin() {
 export function useSignup() {
   return useMutation({
     mutationFn: signupRequest,
+    onSuccess: (data) => {
+      setAuthTokens(data.accessToken, data.refreshToken);
+      setAuthUser(data.user);
+    },
+  });
+}
+
+export function useAcceptInvitation(token: string) {
+  return useMutation({
+    mutationFn: (payload: AcceptInvitationPayload) => acceptInvitationRequest(token, payload),
     onSuccess: (data) => {
       setAuthTokens(data.accessToken, data.refreshToken);
       setAuthUser(data.user);

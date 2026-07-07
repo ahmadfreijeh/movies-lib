@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 export const updateRoleSchema = z.object({
-  role: z.enum(["SUPER_ADMIN", "ADMIN", "USER"]),
+  role: z.enum(["SUPER_ADMIN", "ADMIN"]),
 });
 
 export const permissionSchema = z.object({

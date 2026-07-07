@@ -7,7 +7,8 @@ import {
   useEffect,
   useState,
 } from "react";
-import { getAccessToken, getAuthUser } from "@/lib/utils";
+import { useProfile } from "@/hooks/queries/useAuthQueries";
+import { getAccessToken, getAuthUser, setAuthUser } from "@/lib/utils";
 import { User } from "@/lib/types";
 
 interface AuthContextValue {
@@ -21,27 +22,34 @@ const AuthContext = createContext<AuthContextValue>({
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [value, setValue] = useState<AuthContextValue>({
-    isAuthed: false,
-    profile: null,
-  });
+  const [isAuthed, setIsAuthed] = useState(false);
 
   useEffect(() => {
-    const sync = () =>
-      setValue({
-        isAuthed: Boolean(getAccessToken()),
-        profile: getAuthUser(),
-      });
-    sync();
-    window.addEventListener("storage", sync);
-    window.addEventListener("auth-change", sync);
+    const syncToken = () => setIsAuthed(Boolean(getAccessToken()));
+    syncToken();
+    window.addEventListener("storage", syncToken);
+    window.addEventListener("auth-change", syncToken);
     return () => {
-      window.removeEventListener("storage", sync);
-      window.removeEventListener("auth-change", sync);
+      window.removeEventListener("storage", syncToken);
+      window.removeEventListener("auth-change", syncToken);
     };
   }, []);
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  const { data: fetchedProfile } = useProfile(isAuthed);
+
+  useEffect(() => {
+    if (fetchedProfile) {
+      setAuthUser(fetchedProfile);
+    }
+  }, [fetchedProfile]);
+
+  const profile = isAuthed ? (fetchedProfile ?? getAuthUser()) : null;
+
+  return (
+    <AuthContext.Provider value={{ isAuthed, profile }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth(): AuthContextValue {

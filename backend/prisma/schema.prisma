@@ -22,7 +22,6 @@ enum MediaType {
 enum Role {
   SUPER_ADMIN
   ADMIN
-  USER
 }
 
 enum PermissionResource {
@@ -58,7 +57,7 @@ model User {
   name         String
   email        String @unique
   passwordHash String @map("password_hash")
-  role         Role   @default(USER)
+  role         Role   @default(ADMIN)
 
   organizationId String       @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id])
@@ -83,7 +82,7 @@ model Invitation {
   id    String @id @default(uuid())
   email String
   token String @unique
-  role  Role   @default(USER)
+  role  Role   @default(ADMIN)
 
   organizationId String       @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -93,10 +92,24 @@ model Invitation {
 
   expiresAt  DateTime  @map("expires_at")
   acceptedAt DateTime? @map("accepted_at")
+  revokedAt  DateTime? @map("revoked_at")
+
+  permissions InvitationPermission[]
 
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("invitations")
+}
+
+model InvitationPermission {
+  id           String             @id @default(uuid())
+  invitationId String             @map("invitation_id")
+  invitation   Invitation         @relation(fields: [invitationId], references: [id], onDelete: Cascade)
+  resource     PermissionResource
+  action       PermissionAction
+
+  @@unique([invitationId, resource, action])
+  @@map("invitation_permissions")
 }
 
 model Permission {

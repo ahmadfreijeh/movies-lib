@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from "express";
 import { AuthService } from "../services/AuthService";
+import { UnauthorizedError } from "../utils/errors";
 import { sendSuccess } from "../utils/response";
 
 const authService = new AuthService();
@@ -25,6 +26,18 @@ export async function login(req: Request, res: Response, next: NextFunction): Pr
 export async function refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     const result = await authService.refresh(req.body.refreshToken);
+    sendSuccess(res, result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function me(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new UnauthorizedError();
+    }
+    const result = await authService.me(req.user.userId);
     sendSuccess(res, result);
   } catch (error) {
     next(error);

@@ -1,6 +1,12 @@
 import { MovieType, MediaType } from "@prisma/client";
 import { slugify } from "../../src/utils/helper";
-import { ensureOrganization, ensureSeedUser, prisma, randomItem } from "./shared";
+import {
+  findOrganizationUser,
+  findTestOrganization,
+  prisma,
+  randomItem,
+  TEST_ORGANIZATION_NAME,
+} from "./shared";
 import { GENRES, seedGenres } from "./genres";
 
 const COVER_URLS = [
@@ -67,9 +73,21 @@ function randomGenres(): string[] {
 }
 
 export async function seedMovies(movieCount: number): Promise<void> {
-  const organization = await ensureOrganization();
+  const organization = await findTestOrganization();
+  if (!organization) {
+    console.log(
+      `No organization named "${TEST_ORGANIZATION_NAME}" exists. Skipping movie/media seeding.`,
+    );
+    return;
+  }
+  const seedUser = await findOrganizationUser(organization.id);
+  if (!seedUser) {
+    console.log(
+      `No user found in organization "${TEST_ORGANIZATION_NAME}". Skipping movie/media seeding.`,
+    );
+    return;
+  }
   await seedGenres();
-  const seedUser = await ensureSeedUser(organization.id);
 
   for (let i = 1; i <= movieCount; i++) {
     const title = deterministicTitle(i);

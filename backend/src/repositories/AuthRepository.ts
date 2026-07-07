@@ -1,5 +1,5 @@
 import { prisma } from "../db/prisma";
-import { Role } from "../types";
+import { PermissionAction, PermissionResource, Role } from "../types";
 
 export class AuthRepository {
   async findByEmail(email: string) {
@@ -34,8 +34,15 @@ export class AuthRepository {
     passwordHash: string;
     role: Role;
     organizationId: string;
+    permissions?: { resource: PermissionResource; action: PermissionAction }[];
   }) {
-    return prisma.user.create({ data });
+    const { permissions, ...rest } = data;
+    return prisma.user.create({
+      data: {
+        ...rest,
+        ...(permissions?.length ? { permissions: { create: permissions } } : {}),
+      },
+    });
   }
 
   async storeRefreshToken(data: {

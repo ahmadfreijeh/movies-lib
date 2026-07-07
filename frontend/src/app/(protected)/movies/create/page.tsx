@@ -1,10 +1,11 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useCreateMovie } from "@/hooks/mutations/useMovieMutations";
 import { useGenres } from "@/hooks/queries/useGenreQueries";
+import { useAuth } from "@/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,10 +18,11 @@ import { YearPicker } from "@/components/widgets/YearPicker";
 import { StarRating } from "@/components/widgets/StarRating";
 import { FieldError } from "@/components/ui/field-error";
 import { MovieType } from "@/lib/types";
-import { getErrorMessage, getFieldErrors } from "@/lib/utils";
+import { getErrorMessage, getFieldErrors, hasPermission } from "@/lib/utils";
 
 export default function CreateMoviePage() {
   const router = useRouter();
+  const { profile } = useAuth();
   const createMovie = useCreateMovie();
   const { data: genresData } = useGenres();
   const genreOptions = genresData?.map((g) => g.name) ?? [];
@@ -38,6 +40,16 @@ export default function CreateMoviePage() {
     removedMediaIds: [],
   });
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (profile && !hasPermission(profile, "MOVIE", "CREATE")) {
+      router.replace("/movies");
+    }
+  }, [profile, router]);
+
+  if (!profile || !hasPermission(profile, "MOVIE", "CREATE")) {
+    return null;
+  }
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();

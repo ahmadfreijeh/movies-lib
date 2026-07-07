@@ -1,4 +1,35 @@
-export type Role = "SUPER_ADMIN" | "ADMIN" | "MEMBER";
+export type Role = "SUPER_ADMIN" | "ADMIN";
+
+export type InvitationStatus = "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED";
+
+export type PermissionResource = "ALL" | "MOVIE" | "MEDIA";
+
+export type PermissionAction = "ALL" | "CREATE" | "EDIT" | "DELETE";
+
+export interface Permission {
+  resource: PermissionResource;
+  action: PermissionAction;
+}
+
+export interface Invitation {
+  id: string;
+  email: string;
+  role: Role;
+  organizationId: string;
+  invitedById: string;
+  token: string;
+  status: InvitationStatus;
+  expiresAt: string;
+  acceptedAt: string | null;
+  createdAt: string;
+  permissions: Permission[];
+}
+
+export interface CreateInvitationPayload {
+  email: string;
+  role: Extract<Role, "ADMIN">;
+  permissions: Permission[];
+}
 
 export interface User {
   id: string;
@@ -8,6 +39,7 @@ export interface User {
   organizationId: string;
   createdAt: string;
   updatedAt: string;
+  permissions: Permission[];
 }
 
 export type MovieType = "MOVIE" | "SERIES";
@@ -83,6 +115,16 @@ export interface SignupPayload {
   email: string;
   password: string;
   organizationName: string;
+}
+
+export interface InvitationPreview {
+  email: string;
+  role: Role;
+}
+
+export interface AcceptInvitationPayload {
+  name: string;
+  password: string;
 }
 
 export interface StagedMediaFile {

@@ -37,3 +37,15 @@ export async function getInvitationByToken(req: Request, res: Response, next: Ne
     next(error);
   }
 }
+
+export async function revokeInvitation(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!req.user) {
+      throw new UnauthorizedError();
+    }
+    await invitationService.revoke(req.params.id, req.user.organizationId);
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+}

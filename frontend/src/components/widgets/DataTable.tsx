@@ -53,6 +53,7 @@ interface DataTableProps<TData> {
   onPageChange?: (page: number) => void;
 
   getRowHref?: (row: TData) => string;
+  onRowClick?: (row: TData) => void;
   renderRowActions?: (row: TData) => ReactNode;
 
   createHref?: string;
@@ -72,6 +73,7 @@ export function DataTable<TData>({
   totalPages,
   onPageChange,
   getRowHref,
+  onRowClick,
   renderRowActions,
   createHref,
   createLabel = "Create",
@@ -146,11 +148,18 @@ export function DataTable<TData>({
             ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => {
                 const href = getRowHref?.(row.original);
+                const clickable = Boolean(href || onRowClick);
                 return (
                   <TableRow
                     key={row.id}
-                    className={href ? "cursor-pointer" : undefined}
-                    onClick={href ? () => router.push(href) : undefined}
+                    className={clickable ? "cursor-pointer" : undefined}
+                    onClick={
+                      href
+                        ? () => router.push(href)
+                        : onRowClick
+                          ? () => onRowClick(row.original)
+                          : undefined
+                    }
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>

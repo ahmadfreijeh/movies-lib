@@ -4,10 +4,17 @@ import { AuthRepository } from "../repositories/AuthRepository";
 import { CreateInvitationInput } from "../schemas/invitation.schema";
 import { parseDurationMs } from "../utils/helper";
 import { env } from "../config/env";
-import { ConflictError, NotFoundError } from "../utils/errors";
-import { Invitation, InvitationStatus, InvitationWithStatus } from "../types";
+import { ConflictError, ForbiddenError, NotFoundError } from "../utils/errors";
+import {
+  InvitationStatus,
+  InvitationWithPermissions,
+  InvitationWithStatus,
+} from "../types";
 
-function getInvitationStatus(invitation: Invitation): InvitationStatus {
+function getInvitationStatus(
+  invitation: InvitationWithPermissions,
+): InvitationStatus {
+  if (invitation.revokedAt) return "REVOKED";
   if (invitation.acceptedAt) return "ACCEPTED";
   if (invitation.expiresAt < new Date()) return "EXPIRED";
   return "PENDING";
@@ -26,7 +33,7 @@ export class InvitationService {
     invitedById: string,
     organizationId: string,
     input: CreateInvitationInput,
-  ): Promise<Invitation> {
+  ): Promise<InvitationWithPermissions> {
     const existing = await this.authRepository.findByEmail(input.email);
     if (existing) {
       throw new ConflictError("An account with this email already exists");
@@ -44,6 +51,7 @@ export class InvitationService {
       organizationId,
       invitedById,
       expiresAt,
+      permissions: input.permissions,
     });
   }
 
@@ -58,15 +66,30 @@ export class InvitationService {
     }));
   }
 
-  async getByToken(token: string): Promise<Invitation> {
+  async getByToken(token: string): Promise<InvitationWithPermissions> {
     const invitation = await this.invitationRepository.findByToken(token);
     if (
       !invitation ||
       invitation.acceptedAt ||
+      invitation.revokedAt ||
       invitation.expiresAt < new Date()
     ) {
       throw new NotFoundError("Invalid or expired invitation");
     }
     return invitation;
+  }
+
+  async revoke(id: string, organizationId: string): Promise<void> {
+    const invitation = await this.invitationRepository.findById(id);
+    if (!invitation || invitation.organizationId !== organizationId) {
+      throw new NotFoundError("Invitation not found");
+    }
+    if (invitation.acceptedAt) {
+      throw new ForbiddenError("Cannot revoke an already-accepted invitation");
+    }
+    if (invitation.revokedAt) {
+      return;
+    }
+    await this.invitationRepository.revoke(id);
   }
 }

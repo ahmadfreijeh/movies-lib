@@ -1,8 +1,10 @@
 import { z } from "zod";
+import { permissionSchema } from "./user.schema";
 
 export const createInvitationSchema = z.object({
   email: z.string().email("Invalid email address"),
-  role: z.enum(["ADMIN", "USER"]),
+  role: z.enum(["ADMIN"]),
+  permissions: z.array(permissionSchema).optional().default([]),
 });
 
 export const acceptInvitationSchema = z.object({

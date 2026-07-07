@@ -1,11 +1,13 @@
 import bcrypt from "bcryptjs";
 import { AuthRepository } from "../repositories/AuthRepository";
 import { InvitationRepository } from "../repositories/InvitationRepository";
+import { PermissionRepository } from "../repositories/PermissionRepository";
 import { AcceptInvitationInput } from "../schemas/invitation.schema";
 import { LoginInput, SignupInput } from "../schemas/auth.schema";
 import {
   BadRequestError,
   ConflictError,
+  NotFoundError,
   UnauthorizedError,
 } from "../utils/errors";
 import {
@@ -15,7 +17,7 @@ import {
 } from "../utils/jwt";
 import { parseDurationMs } from "../utils/helper";
 import { env } from "../config/env";
-import { PublicUser, Role } from "../types";
+import { Permission, PublicUser, Role } from "../types";
 
 const SALT_ROUNDS = 10;
 
@@ -30,7 +32,9 @@ interface UserRecord {
   updatedAt: Date;
 }
 
-function toPublicUser(user: UserRecord): PublicUser {
+export type AuthenticatedUser = PublicUser & { permissions: Permission[] };
+
+function toPublicUser(user: UserRecord, permissions: Permission[] = []): AuthenticatedUser {
   return {
     id: user.id,
     email: user.email,
@@ -39,6 +43,7 @@ function toPublicUser(user: UserRecord): PublicUser {
     organizationId: user.organizationId,
     createdAt: user.createdAt,
     updatedAt: user.updatedAt,
+    permissions,
   };
 }
 
@@ -50,10 +55,12 @@ interface TokenPair {
 export class AuthService {
   private readonly authRepository: AuthRepository;
   private readonly invitationRepository: InvitationRepository;
+  private readonly permissionRepository: PermissionRepository;
 
   constructor() {
     this.authRepository = new AuthRepository();
     this.invitationRepository = new InvitationRepository();
+    this.permissionRepository = new PermissionRepository();
   }
 
   private async issueTokens(
@@ -78,10 +85,18 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async signup(input: SignupInput): Promise<{ user: PublicUser } & TokenPair> {
+  async signup(input: SignupInput): Promise<{ user: AuthenticatedUser } & TokenPair> {
     const existing = await this.authRepository.findByEmail(input.email);
     if (existing) {
       throw new ConflictError("An account with this email already exists");
+    }
+
+    const pendingInvitation =
+      await this.invitationRepository.findPendingByEmail(input.email);
+    if (pendingInvitation) {
+      throw new ConflictError(
+        "This email has a pending team invitation. Please use your invite link to join instead of signing up.",
+      );
     }
 
     const passwordHash = await bcrypt.hash(input.password, SALT_ROUNDS);
@@ -102,7 +117,7 @@ export class AuthService {
     return { user: toPublicUser(user), ...tokens };
   }
 
-  async login(input: LoginInput): Promise<{ user: PublicUser } & TokenPair> {
+  async login(input: LoginInput): Promise<{ user: AuthenticatedUser } & TokenPair> {
     const user = await this.authRepository.findByEmail(input.email);
     if (!user) {
       throw new UnauthorizedError("Invalid email or password");
@@ -119,7 +134,8 @@ export class AuthService {
       user.role,
       user.organizationId,
     );
-    return { user: toPublicUser(user), ...tokens };
+    const permissions = await this.permissionRepository.listForUser(user.id);
+    return { user: toPublicUser(user, permissions), ...tokens };
   }
 
   async refresh(refreshToken: string): Promise<TokenPair> {
@@ -149,14 +165,24 @@ export class AuthService {
     );
   }
 
+  async me(userId: string): Promise<AuthenticatedUser> {
+    const user = await this.authRepository.findById(userId);
+    if (!user) {
+      throw new NotFoundError("User not found");
+    }
+    const permissions = await this.permissionRepository.listForUser(userId);
+    return toPublicUser(user, permissions);
+  }
+
   async acceptInvitation(
     token: string,
     input: AcceptInvitationInput,
-  ): Promise<{ user: PublicUser } & TokenPair> {
+  ): Promise<{ user: AuthenticatedUser } & TokenPair> {
     const invitation = await this.invitationRepository.findByToken(token);
     if (
       !invitation ||
       invitation.acceptedAt ||
+      invitation.revokedAt ||
       invitation.expiresAt < new Date()
     ) {
       throw new BadRequestError("Invalid or expired invitation");
@@ -174,6 +200,10 @@ export class AuthService {
       passwordHash,
       role: invitation.role,
       organizationId: invitation.organizationId,
+      permissions: invitation.permissions.map(({ resource, action }) => ({
+        resource,
+        action,
+      })),
     });
 
     await this.invitationRepository.markAccepted(invitation.id);
@@ -184,6 +214,7 @@ export class AuthService {
       user.role,
       user.organizationId,
     );
-    return { user: toPublicUser(user), ...tokens };
+    const permissions = await this.permissionRepository.listForUser(user.id);
+    return { user: toPublicUser(user, permissions), ...tokens };
   }
 }

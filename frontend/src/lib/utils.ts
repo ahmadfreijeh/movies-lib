@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from "clsx";
 import { isAxiosError } from "axios";
 import { twMerge } from "tailwind-merge";
-import { User } from "./types";
+import { PermissionAction, PermissionResource, User } from "./types";
 
 export const ACCESS_TOKEN_KEY = "accessToken";
 export const REFRESH_TOKEN_KEY = "refreshToken";
@@ -50,6 +50,20 @@ export function clearAuthTokens(): void {
   localStorage.removeItem(REFRESH_TOKEN_KEY);
   localStorage.removeItem(AUTH_USER_KEY);
   window.dispatchEvent(new Event("auth-change"));
+}
+
+export function hasPermission(
+  user: User | null,
+  resource: PermissionResource,
+  action: PermissionAction,
+): boolean {
+  if (!user) return false;
+  if (user.role === "SUPER_ADMIN") return true;
+  return user.permissions.some(
+    (p) =>
+      (p.resource === resource || p.resource === "ALL") &&
+      (p.action === action || p.action === "ALL"),
+  );
 }
 
 export function getErrorMessage(

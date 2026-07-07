@@ -1,6 +1,7 @@
 import type {
   Genre,
   Invitation,
+  InvitationPermission,
   Media,
   MediaType,
   Movie,
@@ -16,6 +17,7 @@ import type {
 export type {
   Genre,
   Invitation,
+  InvitationPermission,
   Media,
   MediaType,
   Movie,
@@ -30,9 +32,15 @@ export type {
 
 export type PublicUser = Omit<User, "passwordHash">;
 
-export type InvitationStatus = "PENDING" | "ACCEPTED" | "EXPIRED";
+export type InvitationStatus = "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED";
 
-export type InvitationWithStatus = Invitation & { status: InvitationStatus };
+export type InvitationWithPermissions = Invitation & {
+  permissions: InvitationPermission[];
+};
+
+export type InvitationWithStatus = InvitationWithPermissions & {
+  status: InvitationStatus;
+};
 
 export interface JwtPayload {
   userId: string;

@@ -1,33 +1,18 @@
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcryptjs";
 
 export const prisma = new PrismaClient();
 
-export const TEST_ORGANIZATION_ID = "00000000-0000-0000-0000-000000000000";
+export const TEST_ORGANIZATION_NAME = "Test Org";
 
-export async function ensureOrganization() {
-  return prisma.organization.upsert({
-    where: { id: TEST_ORGANIZATION_ID },
-    update: {},
-    create: {
-      id: TEST_ORGANIZATION_ID,
-      name: "Test Organization",
-    },
+export async function findTestOrganization() {
+  return prisma.organization.findFirst({
+    where: { name: TEST_ORGANIZATION_NAME },
   });
 }
 
-export async function ensureSeedUser(organizationId: string) {
-  const passwordHash = await bcrypt.hash("password123", 10);
-  return prisma.user.upsert({
-    where: { email: "seeder@movie-library.local" },
-    update: {},
-    create: {
-      name: "Seed User",
-      email: "seeder@movie-library.local",
-      passwordHash,
-      role: "ADMIN",
-      organizationId,
-    },
+export async function findOrganizationUser(organizationId: string) {
+  return prisma.user.findFirst({
+    where: { organizationId, role: "SUPER_ADMIN" },
   });
 }
 
