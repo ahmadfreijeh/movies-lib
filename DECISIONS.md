@@ -25,6 +25,11 @@
 - **Monorepo (single repo, `backend/` + `frontend/`).** For production I'd split this into two
   separate projects/repos (API and frontend) so they can be deployed, scaled, and versioned
   independently.
+- **Deployment via a single Render Blueprint (`render.yaml`)** despite the monorepo, defining both
+  the `backend` and `frontend` as separate Docker web services (each with its own `rootDir` and
+  `Dockerfile`). Each service's `buildFilter.paths` is scoped to its own folder
+  (`backend/**` / `frontend/**`), so a commit only triggers a redeploy of the service whose folder
+  actually changed, instead of rebuilding both on every push.
 
 # What I'd Do Differently in Production
 
