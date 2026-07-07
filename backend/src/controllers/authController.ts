@@ -1,0 +1,41 @@
+import { NextFunction, Request, Response } from "express";
+import { AuthService } from "../services/AuthService";
+import { sendSuccess } from "../utils/response";
+
+const authService = new AuthService();
+
+export async function signup(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const result = await authService.signup(req.body);
+    sendSuccess(res, result, 201);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function login(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const result = await authService.login(req.body);
+    sendSuccess(res, result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const result = await authService.refresh(req.body.refreshToken);
+    sendSuccess(res, result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function acceptInvitation(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    const result = await authService.acceptInvitation(req.params.token, req.body);
+    sendSuccess(res, result, 201);
+  } catch (error) {
+    next(error);
+  }
+}

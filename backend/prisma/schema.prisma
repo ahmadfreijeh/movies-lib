@@ -1,0 +1,186 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MovieType {
+  MOVIE
+  SERIES
+}
+
+enum MediaType {
+  VIDEO
+  COVER
+  TRAILER
+  SUBTITLE
+}
+
+enum Role {
+  SUPER_ADMIN
+  ADMIN
+  USER
+}
+
+enum PermissionResource {
+  ALL
+  MOVIE
+  MEDIA
+}
+
+enum PermissionAction {
+  ALL
+  CREATE
+  EDIT
+  DELETE
+}
+
+model Organization {
+  id   String @id @default(uuid())
+  name String
+
+  users       User[]
+  invitations Invitation[]
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("organizations")
+}
+
+model User {
+  id           String @id @default(uuid())
+  name         String
+  email        String @unique
+  passwordHash String @map("password_hash")
+  role         Role   @default(USER)
+
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  refreshTokens   RefreshToken[]
+  permissions     Permission[]
+  sentInvitations Invitation[]   @relation("InvitationInvitedBy")
+
+  createdMovies Movie[] @relation("MovieCreatedBy")
+  updatedMovies Movie[] @relation("MovieUpdatedBy")
+
+  uploadedMedia Media[] @relation("MediaUploadedBy")
+  updatedMedia  Media[] @relation("MediaUpdatedBy")
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("users")
+}
+
+model Invitation {
+  id    String @id @default(uuid())
+  email String
+  token String @unique
+  role  Role   @default(USER)
+
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  invitedById String @map("invited_by")
+  invitedBy   User   @relation("InvitationInvitedBy", fields: [invitedById], references: [id])
+
+  expiresAt  DateTime  @map("expires_at")
+  acceptedAt DateTime? @map("accepted_at")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("invitations")
+}
+
+model Permission {
+  id       String             @id @default(uuid())
+  userId   String             @map("user_id")
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resource PermissionResource
+  action   PermissionAction
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@unique([userId, resource, action])
+  @@map("permissions")
+}
+
+model Movie {
+  id          String    @id @default(uuid())
+  title       String
+  slug        String    @unique
+  description String
+  type        MovieType
+  releaseYear Int?      @map("release_year")
+  director    String
+  rating      Float?
+  archivedAt  DateTime? @map("archived_at")
+
+  media  Media[]
+  genres Genre[] @relation("MovieGenres")
+
+  createdById String @map("created_by")
+  createdBy   User   @relation("MovieCreatedBy", fields: [createdById], references: [id])
+
+  updatedById String @map("updated_by")
+  updatedBy   User   @relation("MovieUpdatedBy", fields: [updatedById], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([releaseYear])
+  @@index([rating])
+  @@index([createdAt])
+  @@index([archivedAt])
+  @@map("movies")
+}
+
+model Genre {
+  id   String @id @default(uuid())
+  name String @unique
+  slug String @unique
+
+  movies Movie[] @relation("MovieGenres")
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("genres")
+}
+
+model Media {
+  id      String    @id @default(uuid())
+  type    MediaType
+  url     String
+  movieId String?   @map("movie_id")
+  movie   Movie?    @relation(fields: [movieId], references: [id], onDelete: SetNull)
+
+  uploadedById String @map("uploaded_by")
+  uploadedBy   User   @relation("MediaUploadedBy", fields: [uploadedById], references: [id])
+
+  updatedById String @map("updated_by")
+  updatedBy   User   @relation("MediaUpdatedBy", fields: [updatedById], references: [id])
+
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("media")
+}
+
+model RefreshToken {
+  id        String    @id @default(uuid())
+  token     String    @unique
+  userId    String    @map("user_id")
+  expiresAt DateTime  @map("expires_at")
+  revokedAt DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("refresh_tokens")
+}

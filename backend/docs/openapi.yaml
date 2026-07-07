@@ -1,0 +1,382 @@
+openapi: 3.0.3
+info:
+  title: Movie Library API
+  version: "1.0.0"
+  description: API for the Movie Library application.
+servers:
+  - url: http://localhost:5050/api
+    description: Local
+
+tags:
+  - name: Auth
+  - name: Movies
+  - name: Media
+  - name: Users
+  - name: Invitations
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data: {}
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+
+    Signup:
+      type: object
+      required: [name, email, password, organizationName]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 100 }
+        email: { type: string, format: email }
+        password: { type: string, minLength: 8 }
+        organizationName: { type: string, minLength: 2, maxLength: 255 }
+
+    Login:
+      type: object
+      required: [email, password]
+      properties:
+        email: { type: string, format: email }
+        password: { type: string }
+
+    Refresh:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string }
+
+    AcceptInvitation:
+      type: object
+      required: [name, password]
+      properties:
+        name: { type: string, minLength: 2, maxLength: 100 }
+        password: { type: string, minLength: 8 }
+
+    CreateInvitation:
+      type: object
+      required: [email, role]
+      properties:
+        email: { type: string, format: email }
+        role: { type: string, enum: [ADMIN, USER] }
+
+    CreateMovie:
+      type: object
+      required: [title, type]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 255 }
+        description: { type: string, maxLength: 2000 }
+        type: { type: string, enum: [MOVIE, SERIES] }
+        releaseYear: { type: integer, minimum: 1888, maximum: 2100 }
+        genre: { type: string, maxLength: 100 }
+        director: { type: string, maxLength: 255 }
+        rating: { type: number, minimum: 0, maximum: 10 }
+
+    UpdateMovie:
+      allOf:
+        - $ref: '#/components/schemas/CreateMovie'
+      description: All fields optional (partial update).
+
+    UpdateRole:
+      type: object
+      required: [role]
+      properties:
+        role: { type: string, enum: [SUPER_ADMIN, ADMIN, USER] }
+
+    Permission:
+      type: object
+      required: [resource, action]
+      properties:
+        resource: { type: string, enum: [ALL, MOVIE, MEDIA] }
+        action: { type: string, enum: [ALL, CREATE, EDIT, DELETE] }
+
+  parameters:
+    idParam:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    tokenParam:
+      name: token
+      in: path
+      required: true
+      schema: { type: string }
+    page:
+      name: page
+      in: query
+      schema: { type: integer, minimum: 1, default: 1 }
+    pageSize:
+      name: pageSize
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 20 }
+    search:
+      name: search
+      in: query
+      schema: { type: string, maxLength: 255 }
+    genre:
+      name: genre
+      in: query
+      schema: { type: string, maxLength: 100 }
+    sortBy:
+      name: sortBy
+      in: query
+      schema: { type: string, enum: [title, releaseYear, rating, createdAt], default: createdAt }
+    sortOrder:
+      name: sortOrder
+      in: query
+      schema: { type: string, enum: [asc, desc], default: desc }
+
+paths:
+  /auth/signup:
+    post:
+      tags: [Auth]
+      summary: Create a new account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Signup' }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+        '400': { description: Validation error, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Authenticate and receive a JWT
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Login' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+        '401': { description: Invalid credentials, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Refresh an access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Refresh' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+
+  /auth/invitations/{token}:
+    get:
+      tags: [Auth]
+      summary: Get invitation details by token
+      parameters:
+        - $ref: '#/components/parameters/tokenParam'
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+        '404': { description: Not found, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+
+  /auth/invitations/{token}/accept:
+    post:
+      tags: [Auth]
+      summary: Accept an invitation
+      parameters:
+        - $ref: '#/components/parameters/tokenParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AcceptInvitation' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+
+  /movies:
+    get:
+      tags: [Movies]
+      summary: List movies with pagination and filters
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/pageSize'
+        - $ref: '#/components/parameters/search'
+        - $ref: '#/components/parameters/genre'
+        - $ref: '#/components/parameters/sortBy'
+        - $ref: '#/components/parameters/sortOrder'
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+    post:
+      tags: [Movies]
+      summary: Create a movie
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateMovie' }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+        '401': { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+
+  /movies/{id}:
+    get:
+      tags: [Movies]
+      summary: Get a single movie by ID
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+        '404': { description: Not found, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+    put:
+      tags: [Movies]
+      summary: Update a movie
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateMovie' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+        '401': { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+    delete:
+      tags: [Movies]
+      summary: Delete a movie
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+        '401': { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+
+  /media:
+    get:
+      tags: [Media]
+      summary: List media
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+    post:
+      tags: [Media]
+      summary: Upload media
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file, type]
+              properties:
+                file: { type: string, format: binary }
+                type: { type: string, enum: [VIDEO, COVER, TRAILER, SUBTITLE] }
+                movieId: { type: string, format: uuid }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+        '401': { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+
+  /media/{id}:
+    delete:
+      tags: [Media]
+      summary: Delete media
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+        '401': { description: Unauthorized, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+
+  /users:
+    get:
+      tags: [Users]
+      summary: List users (SUPER_ADMIN only)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/page'
+        - $ref: '#/components/parameters/pageSize'
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+        '403': { description: Forbidden, content: { application/json: { schema: { $ref: '#/components/schemas/ErrorResponse' } } } }
+
+  /users/{id}/role:
+    patch:
+      tags: [Users]
+      summary: Update a user's role (SUPER_ADMIN only)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UpdateRole' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+
+  /users/{id}/permissions:
+    get:
+      tags: [Users]
+      summary: List a user's permissions (SUPER_ADMIN only)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+    post:
+      tags: [Users]
+      summary: Grant a permission to a user (SUPER_ADMIN only)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Permission' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+    delete:
+      tags: [Users]
+      summary: Revoke a permission from a user (SUPER_ADMIN only)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - $ref: '#/components/parameters/idParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Permission' }
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+
+  /invitations:
+    get:
+      tags: [Invitations]
+      summary: List invitations (ADMIN/SUPER_ADMIN only)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
+    post:
+      tags: [Invitations]
+      summary: Create an invitation (ADMIN/SUPER_ADMIN only)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CreateInvitation' }
+      responses:
+        '201': { description: Created, content: { application/json: { schema: { $ref: '#/components/schemas/SuccessResponse' } } } }
