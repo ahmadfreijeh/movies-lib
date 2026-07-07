@@ -9,7 +9,7 @@ export async function listMedia(req: Request, res: Response, next: NextFunction)
   try {
     const movieId = typeof req.query.movieId === "string" ? req.query.movieId : undefined;
     const unattached = req.query.unattached === "true";
-    const result = await mediaService.list(movieId, unattached);
+    const result = await mediaService.list(movieId, unattached, req.user?.organizationId);
     sendSuccess(res, result);
   } catch (error) {
     next(error);
@@ -21,7 +21,12 @@ export async function uploadMedia(req: Request, res: Response, next: NextFunctio
     if (!req.user) {
       throw new UnauthorizedError();
     }
-    const media = await mediaService.upload(req.user.userId, req.body, req.file);
+    const media = await mediaService.upload(
+      req.user.userId,
+      req.user.organizationId,
+      req.body,
+      req.file,
+    );
     sendSuccess(res, media, 201);
   } catch (error) {
     next(error);
@@ -33,7 +38,12 @@ export async function attachMedia(req: Request, res: Response, next: NextFunctio
     if (!req.user) {
       throw new UnauthorizedError();
     }
-    const media = await mediaService.attach(req.user.userId, req.params.id, req.body.movieId);
+    const media = await mediaService.attach(
+      req.user.userId,
+      req.params.id,
+      req.body.movieId,
+      req.user.organizationId,
+    );
     sendSuccess(res, media);
   } catch (error) {
     next(error);
@@ -45,7 +55,7 @@ export async function deleteMedia(req: Request, res: Response, next: NextFunctio
     if (!req.user) {
       throw new UnauthorizedError();
     }
-    await mediaService.delete(req.params.id);
+    await mediaService.delete(req.params.id, req.user.organizationId);
     res.status(204).send();
   } catch (error) {
     next(error);

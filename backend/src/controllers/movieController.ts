@@ -1,6 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import { MovieService } from "../services/MovieService";
-import { PaginationInput } from "../schemas/pagination.schema";
+import {
+  GroupedMoviesQueryInput,
+  PaginationInput,
+} from "../schemas/pagination.schema";
 import { UnauthorizedError } from "../utils/errors";
 import { sendSuccess } from "../utils/response";
 
@@ -13,7 +16,24 @@ export async function listMovies(
 ): Promise<void> {
   try {
     const result = await movieService.list(
+      req.user?.organizationId,
       req.query as unknown as PaginationInput,
+    );
+    sendSuccess(res, result);
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function listMoviesGroupedByGenre(
+  req: Request,
+  res: Response,
+  next: NextFunction,
+): Promise<void> {
+  try {
+    const result = await movieService.listGroupedByGenre(
+      req.user?.organizationId,
+      req.query as unknown as GroupedMoviesQueryInput,
     );
     sendSuccess(res, result);
   } catch (error) {
@@ -27,7 +47,10 @@ export async function getMovie(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const movie = await movieService.getByIdWithMedia(req.params.id);
+    const movie = await movieService.getByIdWithMedia(
+      req.params.id,
+      req.user?.organizationId,
+    );
     sendSuccess(res, movie);
   } catch (error) {
     next(error);
@@ -44,7 +67,12 @@ export async function createMovie(
       throw new UnauthorizedError();
     }
     const files = (req.files as Express.Multer.File[]) ?? [];
-    const movie = await movieService.create(req.user.userId, req.body, files);
+    const movie = await movieService.create(
+      req.user.userId,
+      req.user.organizationId,
+      req.body,
+      files,
+    );
     sendSuccess(res, movie, 201);
   } catch (error) {
     next(error);
@@ -64,6 +92,7 @@ export async function updateMovie(
     const movie = await movieService.update(
       req.params.id,
       req.user.userId,
+      req.user.organizationId,
       req.body,
       files,
     );
@@ -82,7 +111,11 @@ export async function archiveMovie(
     if (!req.user) {
       throw new UnauthorizedError();
     }
-    const movie = await movieService.archive(req.params.id, req.user.userId);
+    const movie = await movieService.archive(
+      req.params.id,
+      req.user.userId,
+      req.user.organizationId,
+    );
     sendSuccess(res, movie);
   } catch (error) {
     next(error);
@@ -98,7 +131,11 @@ export async function reactivateMovie(
     if (!req.user) {
       throw new UnauthorizedError();
     }
-    const movie = await movieService.reactivate(req.params.id, req.user.userId);
+    const movie = await movieService.reactivate(
+      req.params.id,
+      req.user.userId,
+      req.user.organizationId,
+    );
     sendSuccess(res, movie);
   } catch (error) {
     next(error);
@@ -111,7 +148,10 @@ export async function deleteMovie(
   next: NextFunction,
 ): Promise<void> {
   try {
-    await movieService.delete(req.params.id);
+    if (!req.user) {
+      throw new UnauthorizedError();
+    }
+    await movieService.delete(req.params.id, req.user.organizationId);
     sendSuccess(res);
   } catch (error) {
     next(error);

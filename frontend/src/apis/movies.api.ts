@@ -2,6 +2,8 @@ import { api } from "@/lib/api";
 import {
   ApiResponse,
   CreateMoviePayload,
+  GenreMovies,
+  GroupedMoviesQueryParams,
   Movie,
   MoviesQueryParams,
   PaginatedResult,
@@ -13,6 +15,19 @@ export async function fetchMovies(
 ): Promise<PaginatedResult<Movie>> {
   const { data } = await api.get<ApiResponse<PaginatedResult<Movie>>>(
     "/movies",
+    { params },
+  );
+  if (!data.data) {
+    throw new Error(data.message ?? "Failed to fetch movies");
+  }
+  return data.data;
+}
+
+export async function fetchGroupedMovies(
+  params: GroupedMoviesQueryParams,
+): Promise<GenreMovies[]> {
+  const { data } = await api.get<ApiResponse<GenreMovies[]>>(
+    "/movies/grouped-by-genre",
     { params },
   );
   if (!data.data) {

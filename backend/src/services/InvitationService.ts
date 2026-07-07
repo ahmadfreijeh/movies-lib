@@ -2,10 +2,16 @@ import crypto from "crypto";
 import { InvitationRepository } from "../repositories/InvitationRepository";
 import { AuthRepository } from "../repositories/AuthRepository";
 import { CreateInvitationInput } from "../schemas/invitation.schema";
-import { parseDurationMs } from "../utils/duration";
+import { parseDurationMs } from "../utils/helper";
 import { env } from "../config/env";
 import { ConflictError, NotFoundError } from "../utils/errors";
-import { Invitation } from "../types";
+import { Invitation, InvitationStatus, InvitationWithStatus } from "../types";
+
+function getInvitationStatus(invitation: Invitation): InvitationStatus {
+  if (invitation.acceptedAt) return "ACCEPTED";
+  if (invitation.expiresAt < new Date()) return "EXPIRED";
+  return "PENDING";
+}
 
 export class InvitationService {
   private readonly invitationRepository: InvitationRepository;
@@ -41,8 +47,15 @@ export class InvitationService {
     });
   }
 
-  async listForOrganization(organizationId: string): Promise<Invitation[]> {
-    return this.invitationRepository.listForOrganization(organizationId);
+  async listForOrganization(
+    organizationId: string,
+  ): Promise<InvitationWithStatus[]> {
+    const invitations =
+      await this.invitationRepository.listForOrganization(organizationId);
+    return invitations.map((invitation) => ({
+      ...invitation,
+      status: getInvitationStatus(invitation),
+    }));
   }
 
   async getByToken(token: string): Promise<Invitation> {

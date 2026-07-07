@@ -3,13 +3,17 @@ import { AuthRepository } from "../repositories/AuthRepository";
 import { InvitationRepository } from "../repositories/InvitationRepository";
 import { AcceptInvitationInput } from "../schemas/invitation.schema";
 import { LoginInput, SignupInput } from "../schemas/auth.schema";
-import { BadRequestError, ConflictError, UnauthorizedError } from "../utils/errors";
+import {
+  BadRequestError,
+  ConflictError,
+  UnauthorizedError,
+} from "../utils/errors";
 import {
   signAccessToken,
   signRefreshToken,
   verifyRefreshToken,
 } from "../utils/jwt";
-import { parseDurationMs } from "../utils/duration";
+import { parseDurationMs } from "../utils/helper";
 import { env } from "../config/env";
 import { PublicUser, Role } from "../types";
 
@@ -89,7 +93,12 @@ export class AuthService {
       organizationName: input.organizationName,
     });
 
-    const tokens = await this.issueTokens(user.id, user.email, user.role, user.organizationId);
+    const tokens = await this.issueTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.organizationId,
+    );
     return { user: toPublicUser(user), ...tokens };
   }
 
@@ -104,7 +113,12 @@ export class AuthService {
       throw new UnauthorizedError("Invalid email or password");
     }
 
-    const tokens = await this.issueTokens(user.id, user.email, user.role, user.organizationId);
+    const tokens = await this.issueTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.organizationId,
+    );
     return { user: toPublicUser(user), ...tokens };
   }
 
@@ -127,7 +141,12 @@ export class AuthService {
     }
 
     await this.authRepository.revokeRefreshToken(refreshToken);
-    return this.issueTokens(user.id, user.email, user.role, user.organizationId);
+    return this.issueTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.organizationId,
+    );
   }
 
   async acceptInvitation(
@@ -135,7 +154,11 @@ export class AuthService {
     input: AcceptInvitationInput,
   ): Promise<{ user: PublicUser } & TokenPair> {
     const invitation = await this.invitationRepository.findByToken(token);
-    if (!invitation || invitation.acceptedAt || invitation.expiresAt < new Date()) {
+    if (
+      !invitation ||
+      invitation.acceptedAt ||
+      invitation.expiresAt < new Date()
+    ) {
       throw new BadRequestError("Invalid or expired invitation");
     }
 
@@ -155,7 +178,12 @@ export class AuthService {
 
     await this.invitationRepository.markAccepted(invitation.id);
 
-    const tokens = await this.issueTokens(user.id, user.email, user.role, user.organizationId);
+    const tokens = await this.issueTokens(
+      user.id,
+      user.email,
+      user.role,
+      user.organizationId,
+    );
     return { user: toPublicUser(user), ...tokens };
   }
 }

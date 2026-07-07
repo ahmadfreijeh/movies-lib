@@ -11,11 +11,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Dropzone } from "@/components/widgets/Dropzone";
 import { useUnattachedMedia } from "@/hooks/queries/useMediaQueries";
 import { Media, MediaType, StagedMediaFile } from "@/lib/types";
@@ -41,6 +42,7 @@ export function MediaManager({ value, onChange }: MediaManagerProps) {
   const { existingMedia, newMedia, removedMediaIds } = value;
   const [uploadType, setUploadType] = useState<MediaType>("COVER");
   const [previews, setPreviews] = useState<PreviewFile[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const { data: unattachedMedia } = useUnattachedMedia();
 
@@ -69,6 +71,7 @@ export function MediaManager({ value, onChange }: MediaManagerProps) {
 
   const handleChooseExisting = (media: Media) => {
     onChange({ ...value, existingMedia: [...existingMedia, media] });
+    setPickerOpen(false);
   };
 
   const removeExisting = (media: Media) => {
@@ -99,27 +102,44 @@ export function MediaManager({ value, onChange }: MediaManagerProps) {
           </SelectContent>
         </Select>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
+        <Sheet open={pickerOpen} onOpenChange={setPickerOpen}>
+          <SheetTrigger asChild>
             <Button type="button" variant="outline" disabled={!availableMedia.length}>
               Choose Existing
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="max-h-64 w-64 overflow-y-auto">
+          </SheetTrigger>
+          <SheetContent side="bottom" className="max-h-[80vh] overflow-y-auto">
+            <SheetHeader>
+              <SheetTitle>Choose Existing Media</SheetTitle>
+            </SheetHeader>
             {availableMedia.length ? (
-              availableMedia.map((media) => (
-                <DropdownMenuItem key={media.id} onClick={() => handleChooseExisting(media)}>
-                  <span className="rounded bg-muted px-1.5 py-0.5 text-xs font-medium">
-                    {media.type}
-                  </span>
-                  <span className="truncate">{media.url.split("/").pop()}</span>
-                </DropdownMenuItem>
-              ))
+              <div className="mt-4 grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
+                {availableMedia.map((media) => (
+                  <button
+                    key={media.id}
+                    type="button"
+                    onClick={() => handleChooseExisting(media)}
+                    className="flex flex-col gap-1 rounded-md border p-2 text-left hover:border-primary"
+                  >
+                    {media.type === "COVER" ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={media.url} alt="" className="h-24 w-full rounded object-cover" />
+                    ) : (
+                      <div className="flex h-24 w-full items-center justify-center rounded bg-muted text-xs text-muted-foreground">
+                        {media.type}
+                      </div>
+                    )}
+                    <span className="truncate text-xs text-muted-foreground">
+                      {media.url.split("/").pop()}
+                    </span>
+                  </button>
+                ))}
+              </div>
             ) : (
-              <DropdownMenuItem disabled>No existing media</DropdownMenuItem>
+              <p className="mt-4 text-sm text-muted-foreground">No existing media</p>
             )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          </SheetContent>
+        </Sheet>
       </div>
 
       <Dropzone

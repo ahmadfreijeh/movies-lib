@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Film } from "lucide-react";
-import { ACCESS_TOKEN_KEY } from "@/lib/api";
+import { ACCESS_TOKEN_KEY } from "@/lib/utils";
 import { Footer } from "@/components/Footer";
 
 export default function GuestLayout({ children }: { children: React.ReactNode }) {
@@ -13,7 +13,7 @@ export default function GuestLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (localStorage.getItem(ACCESS_TOKEN_KEY)) {
-      router.replace("/");
+      router.replace("/dashboard");
       return;
     }
     setChecked(true);

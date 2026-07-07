@@ -2,13 +2,22 @@ import { prisma } from "../db/prisma";
 import { Media, MediaType } from "../types";
 
 export class MediaRepository {
-  async findById(id: string): Promise<Media | null> {
-    return prisma.media.findUnique({ where: { id } });
+  async findById(id: string, organizationId?: string): Promise<Media | null> {
+    return prisma.media.findFirst({
+      where: { id, ...(organizationId ? { organizationId } : {}) },
+    });
   }
 
-  async findAll(movieId?: string, unattached?: boolean): Promise<Media[]> {
+  async findAll(
+    movieId?: string,
+    unattached?: boolean,
+    organizationId?: string,
+  ): Promise<Media[]> {
     return prisma.media.findMany({
-      where: unattached ? { movieId: null } : movieId ? { movieId } : undefined,
+      where: {
+        ...(organizationId ? { organizationId } : {}),
+        ...(unattached ? { movieId: null } : movieId ? { movieId } : {}),
+      },
       orderBy: { createdAt: "asc" },
     });
   }
@@ -20,10 +29,11 @@ export class MediaRepository {
 
   async upload(
     userId: string,
+    organizationId: string,
     data: { type: MediaType; url: string; movieId?: string },
   ): Promise<Media> {
     return prisma.media.create({
-      data: { ...data, uploadedById: userId, updatedById: userId },
+      data: { ...data, organizationId, uploadedById: userId, updatedById: userId },
     });
   }
 
@@ -31,8 +41,9 @@ export class MediaRepository {
     id: string,
     userId: string,
     movieId: string | null,
+    organizationId: string,
   ): Promise<Media | null> {
-    const existing = await prisma.media.findUnique({ where: { id } });
+    const existing = await prisma.media.findFirst({ where: { id, organizationId } });
     if (!existing) return null;
     return prisma.media.update({
       where: { id },

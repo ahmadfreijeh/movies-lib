@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronsUpDown, Film, Image, LogOut, User, Users } from "lucide-react";
+import { ChevronsUpDown, Film, LogOut, User, Users } from "lucide-react";
 import { useLogout } from "@/hooks/mutations/useAuthMutations";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -25,10 +25,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
-const libraryNav = [
-  { href: "/movies", label: "Movies", icon: Film },
-  { href: "/media", label: "Media", icon: Image },
-];
+const libraryNav = [{ href: "/movies", label: "Movies", icon: Film }];
 
 const workspaceNav = [{ href: "/teams", label: "Teams", icon: Users }];
 
@@ -47,7 +44,7 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader>
-        <Link href="/" className="flex items-center gap-2 px-2 py-1 font-semibold">
+        <Link href="/dashboard" className="flex items-center gap-2 px-2 py-1 font-semibold">
           <Film className="h-5 w-5" />
           Movie Library
         </Link>

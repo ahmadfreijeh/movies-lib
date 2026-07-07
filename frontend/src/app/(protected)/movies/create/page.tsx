@@ -14,6 +14,7 @@ import {
   MediaManagerValue,
 } from "@/components/widgets/MediaManager";
 import { YearPicker } from "@/components/widgets/YearPicker";
+import { StarRating } from "@/components/widgets/StarRating";
 import { FieldError } from "@/components/ui/field-error";
 import { MovieType } from "@/lib/types";
 import { getErrorMessage, getFieldErrors } from "@/lib/utils";
@@ -30,7 +31,7 @@ export default function CreateMoviePage() {
   const [releaseYear, setReleaseYear] = useState("");
   const [genres, setGenres] = useState<string[]>([]);
   const [director, setDirector] = useState("");
-  const [rating, setRating] = useState("");
+  const [rating, setRating] = useState<number | undefined>(undefined);
   const [media, setMedia] = useState<MediaManagerValue>({
     existingMedia: [],
     newMedia: [],
@@ -49,7 +50,7 @@ export default function CreateMoviePage() {
         releaseYear: releaseYear ? Number(releaseYear) : undefined,
         genres,
         director,
-        rating: rating ? Number(rating) : undefined,
+        rating,
         newMedia: media.newMedia.length ? media.newMedia : undefined,
         existingMediaIds: media.existingMedia.length
           ? media.existingMedia.map((m) => m.id)
@@ -98,23 +99,25 @@ export default function CreateMoviePage() {
           />
           <FieldError message={fieldErrors.description} />
         </div>
-        <div className="flex flex-col gap-1.5">
-          <Label htmlFor="releaseYear">Release Year</Label>
-          <YearPicker
-            id="releaseYear"
-            value={releaseYear}
-            onChange={setReleaseYear}
-          />
-          <FieldError message={fieldErrors.releaseYear} />
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <Label>Genres</Label>
-          <GenreMultiSelect
-            options={genreOptions}
-            selected={genres}
-            onChange={setGenres}
-          />
-          <FieldError message={fieldErrors.genres} />
+        <div className="grid grid-cols-2 gap-4">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="releaseYear">Release Year</Label>
+            <YearPicker
+              id="releaseYear"
+              value={releaseYear}
+              onChange={setReleaseYear}
+            />
+            <FieldError message={fieldErrors.releaseYear} />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label>Genres</Label>
+            <GenreMultiSelect
+              options={genreOptions}
+              selected={genres}
+              onChange={setGenres}
+            />
+            <FieldError message={fieldErrors.genres} />
+          </div>
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="director">Director</Label>
@@ -126,13 +129,8 @@ export default function CreateMoviePage() {
           <FieldError message={fieldErrors.director} />
         </div>
         <div className="flex flex-col gap-1.5">
-          <Label htmlFor="rating">Rating</Label>
-          <Input
-            id="rating"
-            type="number"
-            value={rating}
-            onChange={(e) => setRating(e.target.value)}
-          />
+          <Label>Rating</Label>
+          <StarRating value={rating} onChange={setRating} />
           <FieldError message={fieldErrors.rating} />
         </div>
         <div className="flex flex-col gap-1.5">

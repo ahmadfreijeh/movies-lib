@@ -6,6 +6,7 @@ import {
   deleteMovie,
   getMovie,
   listMovies,
+  listMoviesGroupedByGenre,
   reactivateMovie,
   updateMovie,
 } from "../controllers/movieController";
@@ -13,7 +14,10 @@ import { requireAuth } from "../middleware/auth";
 import { requirePermission } from "../middleware/permission";
 import { validateBody, validateQuery } from "../utils/validation";
 import { createMovieSchema, updateMovieSchema } from "../schemas/movie.schema";
-import { paginationSchema } from "../schemas/pagination.schema";
+import {
+  groupedMoviesQuerySchema,
+  paginationSchema,
+} from "../schemas/pagination.schema";
 
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
 
@@ -43,6 +47,11 @@ function parseMovieForm(req: Request, _res: Response, next: NextFunction): void 
 const router = Router();
 
 router.get("/", validateQuery(paginationSchema), listMovies);
+router.get(
+  "/grouped-by-genre",
+  validateQuery(groupedMoviesQuerySchema),
+  listMoviesGroupedByGenre,
+);
 router.get("/:id", getMovie);
 router.post(
   "/",

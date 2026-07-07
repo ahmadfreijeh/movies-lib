@@ -20,6 +20,15 @@ export const paginationSchema = z.object({
     .default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
   status: z.enum(["active", "archived", "all"]).default("active"),
+  releaseYearFrom: z.coerce.number().int().optional(),
+  releaseYearTo: z.coerce.number().int().optional(),
 });
 
 export type PaginationInput = z.infer<typeof paginationSchema>;
+
+export const groupedMoviesQuerySchema = z.object({
+  pageSize: z.coerce.number().int().min(1).max(50).default(10),
+  status: z.enum(["active", "archived", "all"]).default("active"),
+});
+
+export type GroupedMoviesQueryInput = z.infer<typeof groupedMoviesQuerySchema>;

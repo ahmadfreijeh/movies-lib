@@ -17,8 +17,12 @@ export class MediaService {
     this.mediaRepository = new MediaRepository();
   }
 
-  async list(movieId?: string, unattached?: boolean): Promise<Media[]> {
-    return this.mediaRepository.findAll(movieId, unattached);
+  async list(
+    movieId?: string,
+    unattached?: boolean,
+    organizationId?: string,
+  ): Promise<Media[]> {
+    return this.mediaRepository.findAll(movieId, unattached, organizationId);
   }
 
   async hasCoverAmong(ids: string[]): Promise<boolean> {
@@ -28,6 +32,7 @@ export class MediaService {
 
   async upload(
     userId: string,
+    organizationId: string,
     input: UploadMediaInput,
     file?: UploadFile,
   ): Promise<Media> {
@@ -36,23 +41,29 @@ export class MediaService {
     }
 
     const url = await uploadToR2(file);
-    return this.mediaRepository.upload(userId, { ...input, url });
+    return this.mediaRepository.upload(userId, organizationId, { ...input, url });
   }
 
   async attach(
     userId: string,
     id: string,
     movieId: string | null,
+    organizationId: string,
   ): Promise<Media> {
-    const media = await this.mediaRepository.updateMovieId(id, userId, movieId);
+    const media = await this.mediaRepository.updateMovieId(
+      id,
+      userId,
+      movieId,
+      organizationId,
+    );
     if (!media) {
       throw new NotFoundError("Media not found");
     }
     return media;
   }
 
-  async delete(id: string): Promise<void> {
-    const media = await this.mediaRepository.findById(id);
+  async delete(id: string, organizationId: string): Promise<void> {
+    const media = await this.mediaRepository.findById(id, organizationId);
     if (!media) {
       throw new NotFoundError("Media not found");
     }

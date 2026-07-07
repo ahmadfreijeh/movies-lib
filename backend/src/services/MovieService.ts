@@ -1,7 +1,10 @@
 import { MovieRepository } from "../repositories/MovieRepository";
 import { MediaService, UploadFile } from "./MediaService";
 import { CreateMovieInput, UpdateMovieInput } from "../schemas/movie.schema";
-import { PaginationInput } from "../schemas/pagination.schema";
+import {
+  GroupedMoviesQueryInput,
+  PaginationInput,
+} from "../schemas/pagination.schema";
 import { Genre, Media, MediaType, Movie, PaginatedResult } from "../types";
 import { NotFoundError, ValidationError } from "../utils/errors";
 
@@ -15,21 +18,32 @@ export class MovieService {
   }
 
   async list(
+    organizationId: string | undefined,
     params: PaginationInput,
   ): Promise<PaginatedResult<Movie & { media: Media[]; genres: Genre[] }>> {
-    return this.movieRepository.findAll(params);
+    return this.movieRepository.findAll(organizationId, params);
   }
 
-  async getById(id: string): Promise<Movie> {
-    const movie = await this.movieRepository.findById(id);
+  async listGroupedByGenre(
+    organizationId: string | undefined,
+    params: GroupedMoviesQueryInput,
+  ) {
+    return this.movieRepository.findGroupedByGenre(organizationId, params);
+  }
+
+  async getById(id: string, organizationId?: string): Promise<Movie> {
+    const movie = await this.movieRepository.findById(id, organizationId);
     if (!movie) {
       throw new NotFoundError("Movie not found");
     }
     return movie;
   }
 
-  async getByIdWithMedia(id: string) {
-    const movie = await this.movieRepository.findByIdWithMedia(id);
+  async getByIdWithMedia(id: string, organizationId?: string) {
+    const movie = await this.movieRepository.findByIdWithMedia(
+      id,
+      organizationId,
+    );
     if (!movie) {
       throw new NotFoundError("Movie not found");
     }
@@ -38,41 +52,52 @@ export class MovieService {
 
   async create(
     userId: string,
+    organizationId: string,
     input: CreateMovieInput,
     files: UploadFile[] = [],
   ) {
     const { existingMediaIds, mediaTypes, ...movieInput } = input;
     await this.ensureCoverImage(files, mediaTypes, existingMediaIds);
-    const movie = await this.movieRepository.create(userId, movieInput);
-    await this.syncMedia(userId, movie.id, {
+    const movie = await this.movieRepository.create(
+      userId,
+      organizationId,
+      movieInput,
+    );
+    await this.syncMedia(userId, organizationId, movie.id, {
       files,
       mediaTypes,
       existingMediaIds,
     });
-    return this.getByIdWithMedia(movie.id);
+    return this.getByIdWithMedia(movie.id, organizationId);
   }
 
   async update(
     id: string,
     userId: string,
+    organizationId: string,
     input: UpdateMovieInput,
     files: UploadFile[] = [],
   ) {
-    await this.getById(id);
+    await this.getById(id, organizationId);
     const { existingMediaIds, mediaTypes, removedMediaIds, ...movieInput } =
       input;
     await this.ensureCoverImage(files, mediaTypes, existingMediaIds);
-    const updated = await this.movieRepository.update(id, userId, movieInput);
+    const updated = await this.movieRepository.update(
+      id,
+      userId,
+      organizationId,
+      movieInput,
+    );
     if (!updated) {
       throw new NotFoundError("Movie not found");
     }
-    await this.syncMedia(userId, id, {
+    await this.syncMedia(userId, organizationId, id, {
       files,
       mediaTypes,
       existingMediaIds,
       removedMediaIds,
     });
-    return this.getByIdWithMedia(id);
+    return this.getByIdWithMedia(id, organizationId);
   }
 
   private async ensureCoverImage(
@@ -92,6 +117,7 @@ export class MovieService {
 
   private async syncMedia(
     userId: string,
+    organizationId: string,
     movieId: string,
     options: {
       files: UploadFile[];
@@ -111,31 +137,40 @@ export class MovieService {
       ...files.map((file, index) =>
         this.mediaService.upload(
           userId,
+          organizationId,
           { type: mediaTypes[index] ?? "COVER", movieId },
           file,
         ),
       ),
       ...existingMediaIds.map((mediaId) =>
-        this.mediaService.attach(userId, mediaId, movieId),
+        this.mediaService.attach(userId, mediaId, movieId, organizationId),
       ),
       ...removedMediaIds.map((mediaId) =>
-        this.mediaService.attach(userId, mediaId, null),
+        this.mediaService.attach(userId, mediaId, null, organizationId),
       ),
     ]);
   }
 
-  async archive(id: string, userId: string): Promise<Movie> {
-    await this.getById(id);
+  async archive(
+    id: string,
+    userId: string,
+    organizationId: string,
+  ): Promise<Movie> {
+    await this.getById(id, organizationId);
     return this.movieRepository.archive(id, userId);
   }
 
-  async reactivate(id: string, userId: string): Promise<Movie> {
-    await this.getById(id);
+  async reactivate(
+    id: string,
+    userId: string,
+    organizationId: string,
+  ): Promise<Movie> {
+    await this.getById(id, organizationId);
     return this.movieRepository.reactivate(id, userId);
   }
 
-  async delete(id: string): Promise<void> {
-    await this.getById(id);
+  async delete(id: string, organizationId: string): Promise<void> {
+    await this.getById(id, organizationId);
     await this.movieRepository.delete(id);
   }
 }

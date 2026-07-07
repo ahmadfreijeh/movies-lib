@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ColumnDef } from "@tanstack/react-table";
-import { Star } from "lucide-react";
+import { ListFilter, Star } from "lucide-react";
 import { toast } from "sonner";
 import { useMovies } from "@/hooks/queries/useMovieQueries";
 import { useGenres } from "@/hooks/queries/useGenreQueries";
@@ -15,17 +15,18 @@ import {
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { DataTable } from "@/components/widgets/DataTable";
 import { ConfirmDialog } from "@/components/widgets/ConfirmDialog";
-import { GenreMultiSelect } from "@/components/widgets/GenreMultiSelect";
+import { MovieFilterPanel } from "@/components/widgets/MovieFilterPanel";
 import { RowActionsMenu } from "@/components/widgets/RowActionsMenu";
 import { Movie } from "@/lib/types";
 import { getErrorMessage } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 
 const columns: ColumnDef<Movie>[] = [
   {
@@ -96,20 +97,17 @@ const columns: ColumnDef<Movie>[] = [
   },
 ];
 
-const STATUS_OPTIONS: { value: "active" | "archived" | "all"; label: string }[] = [
-  { value: "active", label: "Active" },
-  { value: "archived", label: "Archived" },
-  { value: "all", label: "All" },
-];
-
 export default function MoviesPage() {
   const router = useRouter();
   const [search, setSearch] = useState("");
   const [genres, setGenres] = useState<string[]>([]);
   const [status, setStatus] = useState<"active" | "archived" | "all">("active");
+  const [releaseYearFrom, setReleaseYearFrom] = useState<number | undefined>(undefined);
+  const [releaseYearTo, setReleaseYearTo] = useState<number | undefined>(undefined);
   const [page, setPage] = useState(1);
   const [pendingMovie, setPendingMovie] = useState<Movie | null>(null);
   const [movieToDelete, setMovieToDelete] = useState<Movie | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const debouncedSearch = useDebouncedValue(search, 1000);
 
@@ -120,6 +118,8 @@ export default function MoviesPage() {
     search: debouncedSearch || undefined,
     genres: genres.length ? genres : undefined,
     status,
+    releaseYearFrom,
+    releaseYearTo,
     page,
   });
 
@@ -145,7 +145,9 @@ export default function MoviesPage() {
       toast.error(
         getErrorMessage(
           error,
-          isArchiving ? "Failed to archive movie" : "Failed to reactivate movie",
+          isArchiving
+            ? "Failed to archive movie"
+            : "Failed to reactivate movie",
         ),
       );
     }
@@ -180,34 +182,57 @@ export default function MoviesPage() {
         createHref="/movies/create"
         createLabel="Create Movie"
         filters={
-          <>
-            <GenreMultiSelect
-              options={genreOptions}
-              selected={genres}
-              onChange={(value) => {
-                setGenres(value);
-                setPage(1);
-              }}
-            />
-            <Select
-              value={status}
-              onValueChange={(value) => {
-                setStatus(value as "active" | "archived" | "all");
-                setPage(1);
-              }}
-            >
-              <SelectTrigger className="w-32">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                {STATUS_OPTIONS.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </>
+          <Sheet open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="gap-2">
+                <ListFilter className="h-4 w-4" />
+                Filters
+                {(genres.length > 0 ||
+                  status !== "active" ||
+                  releaseYearFrom !== undefined ||
+                  releaseYearTo !== undefined) && (
+                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+                    {genres.length +
+                      (status !== "active" ? 1 : 0) +
+                      (releaseYearFrom !== undefined || releaseYearTo !== undefined ? 1 : 0)}
+                  </span>
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-80">
+              <SheetHeader>
+                <SheetTitle>Filter Movies</SheetTitle>
+              </SheetHeader>
+              <MovieFilterPanel
+                className="mt-2"
+                genreOptions={genreOptions}
+                selectedGenres={genres}
+                onGenresChange={(value) => {
+                  setGenres(value);
+                  setPage(1);
+                }}
+                status={status}
+                onStatusChange={(value) => {
+                  setStatus(value);
+                  setPage(1);
+                }}
+                releaseYearFrom={releaseYearFrom}
+                releaseYearTo={releaseYearTo}
+                onReleaseYearChange={(from, to) => {
+                  setReleaseYearFrom(from);
+                  setReleaseYearTo(to);
+                  setPage(1);
+                }}
+                onReset={() => {
+                  setGenres([]);
+                  setStatus("active");
+                  setReleaseYearFrom(undefined);
+                  setReleaseYearTo(undefined);
+                  setPage(1);
+                }}
+              />
+            </SheetContent>
+          </Sheet>
         }
         page={data?.page ?? page}
         totalPages={data?.totalPages ?? 1}

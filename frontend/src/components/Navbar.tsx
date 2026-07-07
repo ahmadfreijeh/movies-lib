@@ -3,13 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Film } from "lucide-react";
-import { useAuthStatus } from "@/hooks/useAuthStatus";
+import { useAuth } from "@/providers/AuthProvider";
 import { useLogout } from "@/hooks/mutations/useAuthMutations";
 import { Button } from "@/components/ui/button";
 
 export function Navbar() {
   const router = useRouter();
-  const isAuthenticated = useAuthStatus();
+  const { isAuthed: isAuthenticated } = useAuth();
   const logout = useLogout();
 
   const handleLogout = () => {

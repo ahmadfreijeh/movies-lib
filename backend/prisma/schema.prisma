@@ -44,6 +44,8 @@ model Organization {
 
   users       User[]
   invitations Invitation[]
+  movies      Movie[]
+  media       Media[]
 
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -121,6 +123,9 @@ model Movie {
   rating      Float?
   archivedAt  DateTime? @map("archived_at")
 
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
   media  Media[]
   genres Genre[] @relation("MovieGenres")
 
@@ -137,6 +142,7 @@ model Movie {
   @@index([rating])
   @@index([createdAt])
   @@index([archivedAt])
+  @@index([organizationId])
   @@map("movies")
 }
 
@@ -159,6 +165,9 @@ model Media {
   movieId String?   @map("movie_id")
   movie   Movie?    @relation(fields: [movieId], references: [id], onDelete: SetNull)
 
+  organizationId String       @map("organization_id")
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
   uploadedById String @map("uploaded_by")
   uploadedBy   User   @relation("MediaUploadedBy", fields: [uploadedById], references: [id])
 
@@ -168,6 +177,7 @@ model Media {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([organizationId])
   @@map("media")
 }
 

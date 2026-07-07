@@ -1,3 +1,11 @@
+export function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 const UNIT_MS: Record<string, number> = {
   s: 1000,
   m: 60 * 1000,

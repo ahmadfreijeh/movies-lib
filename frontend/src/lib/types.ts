@@ -114,4 +114,16 @@ export interface MoviesQueryParams {
   sortBy?: "title" | "releaseYear" | "rating" | "createdAt";
   sortOrder?: "asc" | "desc";
   status?: "active" | "archived" | "all";
+  releaseYearFrom?: number;
+  releaseYearTo?: number;
+}
+
+export interface GroupedMoviesQueryParams {
+  pageSize?: number;
+  status?: "active" | "archived" | "all";
+}
+
+export interface GenreMovies {
+  genre: Genre;
+  movies: PaginatedResult<Movie>;
 }

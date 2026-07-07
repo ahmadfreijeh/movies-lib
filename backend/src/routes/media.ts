@@ -1,12 +1,20 @@
 import { Router } from "express";
 import multer from "multer";
-import { attachMedia, deleteMedia, listMedia, uploadMedia } from "../controllers/mediaController";
+import {
+  attachMedia,
+  deleteMedia,
+  listMedia,
+  uploadMedia,
+} from "../controllers/mediaController";
 import { requireAuth } from "../middleware/auth";
 import { requirePermission } from "../middleware/permission";
 import { validateBody } from "../utils/validation";
 import { attachMediaSchema, uploadMediaSchema } from "../schemas/media.schema";
 
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 500 * 1024 * 1024 },
+});
 
 const router = Router();
 
@@ -26,6 +34,11 @@ router.patch(
   validateBody(attachMediaSchema),
   attachMedia,
 );
-router.delete("/:id", requireAuth, requirePermission("MEDIA", "DELETE"), deleteMedia);
+router.delete(
+  "/:id",
+  requireAuth,
+  requirePermission("MEDIA", "DELETE"),
+  deleteMedia,
+);
 
 export default router;
