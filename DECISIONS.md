@@ -8,9 +8,10 @@
   performance and connection pooling at scale.
 - **Zod validation at the route boundary** (`validateBody` / `validateQuery`), shared between schema
   definitions and inferred TypeScript types, so controllers stay free of manual validation branches.
-- **JWT auth.** Stateless, verified via `requireAuth` middleware. Only the structure is scaffolded —
-  token storage strategy (httpOnly cookie vs. localStorage) still needs to be finalized before
-  production.
+- **JWT auth.** Stateless, verified via `requireAuth` middleware. Tokens are currently stored in
+  `localStorage` on the frontend (simplest to build with a separate API/frontend origin), which is
+  readable by any injected script if an XSS bug ever slipped in. Production token storage strategy is
+  addressed below.
 - **UUIDs for all IDs.** Unguessable and safe to reference across tenants/services, at the cost of
   slightly larger, less sequential indexes than auto-increment ints.
 - **Two roles (`SUPER_ADMIN`, `ADMIN`) + granular per-invitation permissions** instead of more roles.
@@ -33,6 +34,19 @@
 
 # What I'd Do Differently in Production
 
+- **Move JWT storage from `localStorage` to httpOnly cookies.** Access/refresh tokens currently live in
+  `localStorage` (`frontend/src/lib/utils.ts`) and are attached manually via an Axios interceptor
+  (`frontend/src/lib/api.ts`). That's simple and works well for a decoupled API + SPA during
+  development, but it means any XSS bug in the frontend could read and exfiltrate the tokens. In
+  production I'd issue the access/refresh tokens as `httpOnly`, `Secure`, `SameSite=Lax` (or `Strict`)
+  cookies set by the backend instead, which:
+  - Removes token access from JavaScript entirely (mitigates XSS token theft).
+  - Requires the backend to read the token from `req.cookies` instead of the `Authorization` header,
+    and CSRF protection (e.g. double-submit cookie or a `SameSite` + custom-header check) since
+    cookies are sent automatically by the browser, unlike a Bearer header.
+  - Requires the frontend and API to share a top-level domain (or the API to sit behind the same
+    origin via a proxy) for cookies to be sent cross-subdomain — a deployment consideration, not just
+    a code change.
 - **Split into two repos** (API and frontend) instead of a monorepo, so they can be deployed, scaled,
   and versioned independently.
 - **Load/stress test with k6** before shipping, to know real throughput and where the DB/API break
