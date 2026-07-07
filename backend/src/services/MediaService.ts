@@ -64,7 +64,7 @@ export class MediaService {
     if (!media) {
       throw new NotFoundError("Media not found");
     }
-    await this.mediaRepository.deleteById(id);
     await deleteFromR2(media.url);
+    await this.mediaRepository.deleteById(id);
   }
 }

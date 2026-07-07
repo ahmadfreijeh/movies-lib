@@ -1,8 +1,6 @@
 import crypto from "crypto";
 import { NextFunction, Request, Response } from "express";
-
-const DOCS_USERNAME = "admin";
-const DOCS_PASSWORD = "admin";
+import { env } from "../config/env";
 
 function safeCompare(a: string, b: string): boolean {
   const bufA = Buffer.from(a);
@@ -20,8 +18,8 @@ export function requireDocsAuth(req: Request, res: Response, next: NextFunction)
     if (
       username &&
       password &&
-      safeCompare(username, DOCS_USERNAME) &&
-      safeCompare(password, DOCS_PASSWORD)
+      safeCompare(username, env.DOCS_USERNAME) &&
+      safeCompare(password, env.DOCS_PASSWORD)
     ) {
       next();
       return;

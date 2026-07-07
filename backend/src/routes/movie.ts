@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response, Router } from "express";
-import multer from "multer";
+import { mediaUpload } from "../utils/upload";
 import {
   archiveMovie,
   createMovie,
@@ -18,8 +18,6 @@ import {
   groupedMoviesQuerySchema,
   paginationSchema,
 } from "../schemas/pagination.schema";
-
-const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 500 * 1024 * 1024 } });
 
 const JSON_ARRAY_FIELDS = ["genres", "existingMediaIds", "removedMediaIds", "mediaTypes"] as const;
 
@@ -57,7 +55,7 @@ router.post(
   "/",
   requireAuth,
   requirePermission("MOVIE", "CREATE"),
-  upload.array("media"),
+  mediaUpload.array("media"),
   parseMovieForm,
   validateBody(createMovieSchema),
   createMovie,
@@ -66,7 +64,7 @@ router.put(
   "/:id",
   requireAuth,
   requirePermission("MOVIE", "EDIT"),
-  upload.array("media"),
+  mediaUpload.array("media"),
   parseMovieForm,
   validateBody(updateMovieSchema),
   updateMovie,

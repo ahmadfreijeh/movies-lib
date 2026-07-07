@@ -16,6 +16,8 @@ const envSchema = z.object({
   R2_SECRET_ACCESS_KEY: z.string().min(1, "R2_SECRET_ACCESS_KEY is required"),
   R2_BUCKET_NAME: z.string().min(1, "R2_BUCKET_NAME is required"),
   R2_PUBLIC_URL: z.string().min(1, "R2_PUBLIC_URL is required"),
+  DOCS_USERNAME: z.string().min(1).default("admin"),
+  DOCS_PASSWORD: z.string().min(1, "DOCS_PASSWORD is required"),
 });
 
 const parsed = envSchema.safeParse(process.env);

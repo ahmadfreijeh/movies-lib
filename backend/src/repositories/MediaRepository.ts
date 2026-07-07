@@ -45,6 +45,12 @@ export class MediaRepository {
   ): Promise<Media | null> {
     const existing = await prisma.media.findFirst({ where: { id, organizationId } });
     if (!existing) return null;
+    if (movieId) {
+      const movie = await prisma.movie.findFirst({
+        where: { id: movieId, organizationId },
+      });
+      if (!movie) return null;
+    }
     return prisma.media.update({
       where: { id },
       data: { movieId, updatedById: userId },

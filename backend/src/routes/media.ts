@@ -1,5 +1,5 @@
 import { Router } from "express";
-import multer from "multer";
+import { mediaUpload } from "../utils/upload";
 import {
   attachMedia,
   deleteMedia,
@@ -11,19 +11,14 @@ import { requirePermission } from "../middleware/permission";
 import { validateBody } from "../utils/validation";
 import { attachMediaSchema, uploadMediaSchema } from "../schemas/media.schema";
 
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 500 * 1024 * 1024 },
-});
-
 const router = Router();
 
-router.get("/", listMedia);
+router.get("/", requireAuth, listMedia);
 router.post(
   "/",
   requireAuth,
   requirePermission("MEDIA", "CREATE"),
-  upload.single("file"),
+  mediaUpload.single("file"),
   validateBody(uploadMediaSchema),
   uploadMedia,
 );

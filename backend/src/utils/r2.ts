@@ -35,7 +35,11 @@ export async function uploadToR2(file: {
 }
 
 export async function deleteFromR2(url: string): Promise<void> {
-  const key = url.replace(`${env.R2_PUBLIC_URL}/`, "");
+  const prefix = `${env.R2_PUBLIC_URL}/`;
+  if (!url.startsWith(prefix)) {
+    throw new Error(`URL does not match configured R2 public URL: ${url}`);
+  }
+  const key = url.slice(prefix.length);
 
   await r2Client.send(
     new DeleteObjectCommand({

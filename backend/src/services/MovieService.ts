@@ -13,7 +13,7 @@ import {
   PaginatedResult,
   UploadFile,
 } from "../types";
-import { NotFoundError, ValidationError } from "../utils/errors";
+import { BadRequestError, NotFoundError, ValidationError } from "../utils/errors";
 
 export class MovieService {
   private readonly movieRepository: MovieRepository;
@@ -142,7 +142,7 @@ export class MovieService {
       removedMediaIds = [],
     } = options;
 
-    await Promise.all([
+    const results = await Promise.allSettled([
       ...files.map((file, index) =>
         this.mediaService.upload(
           userId,
@@ -158,6 +158,18 @@ export class MovieService {
         this.mediaService.attach(userId, mediaId, null, organizationId),
       ),
     ]);
+
+    const failures = results.filter(
+      (r): r is PromiseRejectedResult => r.status === "rejected",
+    );
+    if (failures.length > 0) {
+      const messages = failures.map((f) =>
+        f.reason instanceof Error ? f.reason.message : String(f.reason),
+      );
+      throw new BadRequestError(
+        `Failed to sync ${failures.length} media item(s): ${messages.join("; ")}`,
+      );
+    }
   }
 
   async archive(

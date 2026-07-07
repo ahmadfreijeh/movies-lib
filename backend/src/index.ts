@@ -8,6 +8,7 @@ import { corsMiddleware } from "./middleware/cors";
 import { requestLogger } from "./middleware/requestLogger";
 import { requireDocsAuth } from "./middleware/docsAuth";
 import { errorHandler, notFoundHandler } from "./middleware/errorHandler";
+import { apiRateLimiter } from "./middleware/rateLimit";
 import routes from "./routes";
 
 const app = express();
@@ -15,6 +16,7 @@ const app = express();
 app.use(corsMiddleware);
 app.use(express.json());
 app.use(requestLogger);
+app.use("/api", apiRateLimiter);
 
 app.get("/health", (_req, res) => {
   res.status(200).json({ success: true, message: "OK" });

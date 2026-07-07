@@ -199,6 +199,7 @@ model Media {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([organizationId])
+  @@index([movieId])
   @@map("media")
 }
 

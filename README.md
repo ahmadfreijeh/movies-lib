@@ -66,6 +66,7 @@ npm run prisma:studio  # browse the database
 npm run prisma:seed    # seed sample data (500 movies by default)
 npm run build && npm start  # production build/run
 npm run lint
+npm test               # run unit tests (Vitest)
 ```
 
 `npm run prisma:seed` runs [`backend/prisma/seed.ts`](backend/prisma/seed.ts), which looks for an
@@ -129,6 +130,8 @@ All routes are mounted under `/api`. See [backend/docs/API.md](backend/docs/API.
 | `/api/genres` | List available genres |
 
 Most mutating endpoints (create/update/delete on movies, media, users, invitations) require authentication via `requireAuth`; browsing endpoints are public.
+
+All `/api` routes are rate limited (300 requests / 15 min per IP); auth endpoints (`/api/auth/signup`, `/login`, `/refresh`, invitation acceptance) have a stricter limit (10 failed attempts / 15 min per IP) to slow down brute-force attempts.
 
 ## Documentation
 
