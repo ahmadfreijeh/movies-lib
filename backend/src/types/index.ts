@@ -30,6 +30,10 @@ export type {
 
 export type PublicUser = Omit<User, "passwordHash">;
 
+export type InvitationStatus = "PENDING" | "ACCEPTED" | "EXPIRED";
+
+export type InvitationWithStatus = Invitation & { status: InvitationStatus };
+
 export interface JwtPayload {
   userId: string;
   email: string;
