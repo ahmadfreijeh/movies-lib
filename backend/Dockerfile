@@ -14,9 +14,10 @@ ENV NODE_ENV=production
 COPY package*.json ./
 COPY prisma ./prisma
 RUN npm install --omit=dev --ignore-scripts
+RUN npm install prisma@5.17.0 --no-save
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=builder /app/node_modules/@prisma/client ./node_modules/@prisma/client
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/docs ./docs
 EXPOSE 5050
-CMD ["node", "dist/index.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/index.js"]
