@@ -4,7 +4,10 @@ import { FormEvent, Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { useAcceptInvitation, useLogin } from "@/hooks/mutations/useAuthMutations";
+import {
+  useAcceptInvitation,
+  useLogin,
+} from "@/hooks/mutations/useAuthMutations";
 import { useInvitationPreview } from "@/hooks/queries/useAuthQueries";
 import { AuthShell } from "@/components/AuthShell";
 import { Button } from "@/components/ui/button";
@@ -51,11 +54,21 @@ function AcceptInvitationForm({ token }: { token: string }) {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" value={invitation.email} readOnly disabled />
+          <Input
+            id="email"
+            type="email"
+            value={invitation.email}
+            readOnly
+            disabled
+          />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="name">Name</Label>
-          <Input id="name" value={name} onChange={(e) => setName(e.target.value)} />
+          <Input
+            id="name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
           <FieldError message={fieldErrors.name} />
         </div>
         <div className="flex flex-col gap-1.5">
@@ -101,12 +114,22 @@ function LoginForm() {
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="email">Email</Label>
-          <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
           <FieldError message={fieldErrors.email} />
         </div>
         <div className="flex flex-col gap-1.5">
           <Label htmlFor="password">Password</Label>
-          <Input id="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          <Input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
           <FieldError message={fieldErrors.password} />
         </div>
         <Button type="submit" disabled={login.isPending}>

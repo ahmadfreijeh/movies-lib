@@ -5,10 +5,9 @@ import { PermissionRepository } from "../repositories/PermissionRepository";
 import { AcceptInvitationInput } from "../schemas/invitation.schema";
 import { LoginInput, SignupInput } from "../schemas/auth.schema";
 import {
-  BadRequestError,
   ConflictError,
-  NotFoundError,
   UnauthorizedError,
+  BadRequestError,
 } from "../utils/errors";
 import {
   signAccessToken,
@@ -16,41 +15,16 @@ import {
   verifyRefreshToken,
 } from "../utils/jwt";
 import { parseDurationMs } from "../utils/helper";
+import { toAuthenticatedUser } from "../utils/userMapper";
 import { env } from "../config/env";
-import { Permission, PublicUser, Role } from "../types";
+import {
+  AuthenticatedUser,
+  InvitationStatus,
+  Role,
+  TokenPair,
+} from "../types";
 
 const SALT_ROUNDS = 10;
-
-interface UserRecord {
-  id: string;
-  email: string;
-  name: string;
-  passwordHash: string;
-  role: Role;
-  organizationId: string;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export type AuthenticatedUser = PublicUser & { permissions: Permission[] };
-
-function toPublicUser(user: UserRecord, permissions: Permission[] = []): AuthenticatedUser {
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    organizationId: user.organizationId,
-    createdAt: user.createdAt,
-    updatedAt: user.updatedAt,
-    permissions,
-  };
-}
-
-interface TokenPair {
-  accessToken: string;
-  refreshToken: string;
-}
 
 export class AuthService {
   private readonly authRepository: AuthRepository;
@@ -85,7 +59,9 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async signup(input: SignupInput): Promise<{ user: AuthenticatedUser } & TokenPair> {
+  async signup(
+    input: SignupInput,
+  ): Promise<{ user: AuthenticatedUser } & TokenPair> {
     const existing = await this.authRepository.findByEmail(input.email);
     if (existing) {
       throw new ConflictError("An account with this email already exists");
@@ -104,7 +80,7 @@ export class AuthService {
       name: input.name,
       email: input.email,
       passwordHash,
-      role: "SUPER_ADMIN",
+      role: Role.SUPER_ADMIN,
       organizationName: input.organizationName,
     });
 
@@ -114,10 +90,12 @@ export class AuthService {
       user.role,
       user.organizationId,
     );
-    return { user: toPublicUser(user), ...tokens };
+    return { user: toAuthenticatedUser(user), ...tokens };
   }
 
-  async login(input: LoginInput): Promise<{ user: AuthenticatedUser } & TokenPair> {
+  async login(
+    input: LoginInput,
+  ): Promise<{ user: AuthenticatedUser } & TokenPair> {
     const user = await this.authRepository.findByEmail(input.email);
     if (!user) {
       throw new UnauthorizedError("Invalid email or password");
@@ -134,8 +112,9 @@ export class AuthService {
       user.role,
       user.organizationId,
     );
+
     const permissions = await this.permissionRepository.listForUser(user.id);
-    return { user: toPublicUser(user, permissions), ...tokens };
+    return { user: toAuthenticatedUser(user, permissions), ...tokens };
   }
 
   async refresh(refreshToken: string): Promise<TokenPair> {
@@ -165,26 +144,12 @@ export class AuthService {
     );
   }
 
-  async me(userId: string): Promise<AuthenticatedUser> {
-    const user = await this.authRepository.findById(userId);
-    if (!user) {
-      throw new NotFoundError("User not found");
-    }
-    const permissions = await this.permissionRepository.listForUser(userId);
-    return toPublicUser(user, permissions);
-  }
-
   async acceptInvitation(
     token: string,
     input: AcceptInvitationInput,
   ): Promise<{ user: AuthenticatedUser } & TokenPair> {
     const invitation = await this.invitationRepository.findByToken(token);
-    if (
-      !invitation ||
-      invitation.acceptedAt ||
-      invitation.revokedAt ||
-      invitation.expiresAt < new Date()
-    ) {
+    if (!invitation || invitation.status !== InvitationStatus.PENDING) {
       throw new BadRequestError("Invalid or expired invitation");
     }
 
@@ -215,6 +180,6 @@ export class AuthService {
       user.organizationId,
     );
     const permissions = await this.permissionRepository.listForUser(user.id);
-    return { user: toPublicUser(user, permissions), ...tokens };
+    return { user: toAuthenticatedUser(user, permissions), ...tokens };
   }
 }

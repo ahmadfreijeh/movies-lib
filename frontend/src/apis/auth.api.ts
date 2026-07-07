@@ -43,6 +43,16 @@ export async function fetchMe(): Promise<User> {
   return data.data;
 }
 
+export async function updateProfileRequest(payload: {
+  name: string;
+}): Promise<User> {
+  const { data } = await api.patch<ApiResponse<User>>("/auth/me", payload);
+  if (!data.data) {
+    throw new Error(data.message ?? "Failed to update profile");
+  }
+  return data.data;
+}
+
 export async function fetchInvitationByToken(
   token: string,
 ): Promise<InvitationPreview> {

@@ -1,45 +1,59 @@
+import {
+  InvitationStatus,
+  MediaType,
+  MovieType,
+  PermissionAction,
+  PermissionResource,
+  Role,
+} from "@prisma/client";
 import type {
   Genre,
   Invitation,
   InvitationPermission,
   Media,
-  MediaType,
   Movie,
-  MovieType,
   Organization,
   Permission,
+  User,
+} from "@prisma/client";
+
+export {
+  InvitationStatus,
+  MediaType,
+  MovieType,
   PermissionAction,
   PermissionResource,
   Role,
-  User,
-} from "@prisma/client";
+};
 
 export type {
   Genre,
   Invitation,
   InvitationPermission,
   Media,
-  MediaType,
   Movie,
-  MovieType,
   Organization,
   Permission,
-  PermissionAction,
-  PermissionResource,
-  Role,
   User,
 };
 
 export type PublicUser = Omit<User, "passwordHash">;
 
-export type InvitationStatus = "PENDING" | "ACCEPTED" | "EXPIRED" | "REVOKED";
+export type AuthenticatedUser = PublicUser & { permissions: Permission[] };
+
+export interface TokenPair {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface UploadFile {
+  buffer: Buffer;
+  mimetype: string;
+  originalname: string;
+}
 
 export type InvitationWithPermissions = Invitation & {
   permissions: InvitationPermission[];
-};
-
-export type InvitationWithStatus = InvitationWithPermissions & {
-  status: InvitationStatus;
 };
 
 export interface JwtPayload {

@@ -37,6 +37,13 @@ enum PermissionAction {
   DELETE
 }
 
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  REVOKED
+}
+
 model Organization {
   id   String @id @default(uuid())
   name String
@@ -79,10 +86,11 @@ model User {
 }
 
 model Invitation {
-  id    String @id @default(uuid())
-  email String
-  token String @unique
-  role  Role   @default(ADMIN)
+  id     String            @id @default(uuid())
+  email  String
+  token  String            @unique
+  role   Role              @default(ADMIN)
+  status InvitationStatus  @default(PENDING)
 
   organizationId String       @map("organization_id")
   organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)

@@ -10,8 +10,8 @@ export class PermissionRepository {
     const count = await prisma.permission.count({
       where: {
         userId,
-        resource: { in: [resource, "ALL"] },
-        action: { in: [action, "ALL"] },
+        resource: { in: [resource, PermissionResource.ALL] },
+        action: { in: [action, PermissionAction.ALL] },
       },
     });
     return count > 0;

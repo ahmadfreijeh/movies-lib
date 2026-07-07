@@ -78,7 +78,7 @@ export default function EditMoviePage() {
           : undefined,
       });
       toast.success("Movie updated");
-      router.push(`/movies/${params.id}`);
+      router.push("/movies");
     } catch (error) {
       setFieldErrors(getFieldErrors(error));
       toast.error(getErrorMessage(error, "Failed to update movie"));

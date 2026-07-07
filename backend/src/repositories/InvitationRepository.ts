@@ -1,5 +1,10 @@
 import { prisma } from "../db/prisma";
-import { PermissionAction, PermissionResource, Role } from "../types";
+import {
+  InvitationStatus,
+  PermissionAction,
+  PermissionResource,
+  Role,
+} from "../types";
 
 export class InvitationRepository {
   async create(data: {
@@ -19,6 +24,14 @@ export class InvitationRepository {
   }
 
   async findByToken(token: string) {
+    await prisma.invitation.updateMany({
+      where: {
+        token,
+        status: InvitationStatus.PENDING,
+        expiresAt: { lt: new Date() },
+      },
+      data: { status: InvitationStatus.EXPIRED },
+    });
     return prisma.invitation.findUnique({
       where: { token },
       include: { permissions: true },
@@ -37,6 +50,14 @@ export class InvitationRepository {
   }
 
   async listForOrganization(organizationId: string) {
+    await prisma.invitation.updateMany({
+      where: {
+        organizationId,
+        status: InvitationStatus.PENDING,
+        expiresAt: { lt: new Date() },
+      },
+      data: { status: InvitationStatus.EXPIRED },
+    });
     return prisma.invitation.findMany({
       where: { organizationId },
       orderBy: { createdAt: "desc" },
@@ -47,7 +68,7 @@ export class InvitationRepository {
   async markAccepted(id: string) {
     return prisma.invitation.update({
       where: { id },
-      data: { acceptedAt: new Date() },
+      data: { acceptedAt: new Date(), status: InvitationStatus.ACCEPTED },
     });
   }
 
@@ -58,7 +79,7 @@ export class InvitationRepository {
   async revoke(id: string) {
     return prisma.invitation.update({
       where: { id },
-      data: { revokedAt: new Date() },
+      data: { revokedAt: new Date(), status: InvitationStatus.REVOKED },
     });
   }
 }

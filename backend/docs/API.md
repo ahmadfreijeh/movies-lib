@@ -7,17 +7,21 @@ Base URL: `http://localhost:5050/api`
 ## Auth
 
 ### POST /auth/signup
+
 Create a new account.
 
 **Body**
+
 ```json
 { "name": "string", "email": "string", "password": "string" }
 ```
 
 ### POST /auth/login
+
 Authenticate and receive a JWT.
 
 **Body**
+
 ```json
 { "email": "string", "password": "string" }
 ```
@@ -25,20 +29,25 @@ Authenticate and receive a JWT.
 ## Movies
 
 ### GET /movies
+
 List movies with pagination and filters.
 
 **Query params**: `page`, `pageSize`, `search`, `genre`, `sortBy`, `sortOrder`
 
 ### GET /movies/:id
+
 Get a single movie by ID.
 
 ### POST /movies
+
 Create a movie. Requires `Authorization: Bearer <token>`.
 
 ### PUT /movies/:id
+
 Update a movie. Requires ownership and `Authorization: Bearer <token>`.
 
 ### DELETE /movies/:id
+
 Delete a movie. Requires ownership and `Authorization: Bearer <token>`.
 
 ## Response shape

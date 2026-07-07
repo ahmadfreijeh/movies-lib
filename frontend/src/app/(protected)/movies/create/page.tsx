@@ -55,7 +55,7 @@ export default function CreateMoviePage() {
     e.preventDefault();
     setFieldErrors({});
     try {
-      const movie = await createMovie.mutateAsync({
+      await createMovie.mutateAsync({
         title,
         type,
         description,
@@ -69,7 +69,7 @@ export default function CreateMoviePage() {
           : undefined,
       });
       toast.success("Movie created");
-      router.push(`/movies/${movie.id}`);
+      router.push("/movies");
     } catch (error) {
       setFieldErrors(getFieldErrors(error));
       toast.error(getErrorMessage(error, "Failed to create movie"));

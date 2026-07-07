@@ -51,13 +51,21 @@ function buildMovieFormData(
 
   if (payload.title !== undefined) formData.append("title", payload.title);
   if (payload.type !== undefined) formData.append("type", payload.type);
-  if (payload.description !== undefined) formData.append("description", payload.description);
-  if (payload.releaseYear !== undefined) formData.append("releaseYear", String(payload.releaseYear));
-  if (payload.director !== undefined) formData.append("director", payload.director);
-  if (payload.rating !== undefined) formData.append("rating", String(payload.rating));
-  if (payload.genres !== undefined) formData.append("genres", JSON.stringify(payload.genres));
+  if (payload.description !== undefined)
+    formData.append("description", payload.description);
+  if (payload.releaseYear !== undefined)
+    formData.append("releaseYear", String(payload.releaseYear));
+  if (payload.director !== undefined)
+    formData.append("director", payload.director);
+  if (payload.rating !== undefined)
+    formData.append("rating", String(payload.rating));
+  if (payload.genres !== undefined)
+    formData.append("genres", JSON.stringify(payload.genres));
   if (payload.existingMediaIds !== undefined) {
-    formData.append("existingMediaIds", JSON.stringify(payload.existingMediaIds));
+    formData.append(
+      "existingMediaIds",
+      JSON.stringify(payload.existingMediaIds),
+    );
   }
   if ("removedMediaIds" in payload && payload.removedMediaIds !== undefined) {
     formData.append("removedMediaIds", JSON.stringify(payload.removedMediaIds));

@@ -1,11 +1,18 @@
 import { MovieRepository } from "../repositories/MovieRepository";
-import { MediaService, UploadFile } from "./MediaService";
+import { MediaService } from "./MediaService";
 import { CreateMovieInput, UpdateMovieInput } from "../schemas/movie.schema";
 import {
   GroupedMoviesQueryInput,
   PaginationInput,
 } from "../schemas/pagination.schema";
-import { Genre, Media, MediaType, Movie, PaginatedResult } from "../types";
+import {
+  Genre,
+  Media,
+  MediaType,
+  Movie,
+  PaginatedResult,
+  UploadFile,
+} from "../types";
 import { NotFoundError, ValidationError } from "../utils/errors";
 
 export class MovieService {
@@ -105,7 +112,9 @@ export class MovieService {
     mediaTypes: MediaType[] = [],
     existingMediaIds: string[] = [],
   ): Promise<void> {
-    const hasNewCover = files.some((_, index) => mediaTypes[index] === "COVER");
+    const hasNewCover = files.some(
+      (_, index) => mediaTypes[index] === MediaType.COVER,
+    );
     if (hasNewCover) return;
     const hasExistingCover =
       await this.mediaService.hasCoverAmong(existingMediaIds);
@@ -138,7 +147,7 @@ export class MovieService {
         this.mediaService.upload(
           userId,
           organizationId,
-          { type: mediaTypes[index] ?? "COVER", movieId },
+          { type: mediaTypes[index] ?? MediaType.COVER, movieId },
           file,
         ),
       ),

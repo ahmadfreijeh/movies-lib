@@ -27,4 +27,8 @@ export class UserRepository {
   async updateRole(id: string, role: Role) {
     return prisma.user.update({ where: { id }, data: { role } });
   }
+
+  async updateName(id: string, name: string) {
+    return prisma.user.update({ where: { id }, data: { name } });
+  }
 }

@@ -3,7 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { Film } from "lucide-react";
-import { useGroupedMovies, useInfiniteMovies } from "@/hooks/queries/useMovieQueries";
+import {
+  useGroupedMovies,
+  useInfiniteMovies,
+} from "@/hooks/queries/useMovieQueries";
 import { useGenres } from "@/hooks/queries/useGenreQueries";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Footer } from "@/components/Footer";
@@ -28,8 +31,12 @@ export default function PublicHomePage() {
   const [genres, setGenres] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<MovieSortBy>("createdAt");
   const [sortOrder, setSortOrder] = useState<MovieSortOrder>("desc");
-  const [releaseYearFrom, setReleaseYearFrom] = useState<number | undefined>(undefined);
-  const [releaseYearTo, setReleaseYearTo] = useState<number | undefined>(undefined);
+  const [releaseYearFrom, setReleaseYearFrom] = useState<number | undefined>(
+    undefined,
+  );
+  const [releaseYearTo, setReleaseYearTo] = useState<number | undefined>(
+    undefined,
+  );
   const loadMoreRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -44,7 +51,10 @@ export default function PublicHomePage() {
     releaseYearTo !== undefined;
 
   const { data: genresData } = useGenres();
-  const genreOptions = useMemo(() => genresData?.map((g) => g.name) ?? [], [genresData]);
+  const genreOptions = useMemo(
+    () => genresData?.map((g) => g.name) ?? [],
+    [genresData],
+  );
 
   const { data: groupedData, isLoading: isGroupedLoading } = useGroupedMovies({
     status: "active",

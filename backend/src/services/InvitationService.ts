@@ -5,20 +5,7 @@ import { CreateInvitationInput } from "../schemas/invitation.schema";
 import { parseDurationMs } from "../utils/helper";
 import { env } from "../config/env";
 import { ConflictError, ForbiddenError, NotFoundError } from "../utils/errors";
-import {
-  InvitationStatus,
-  InvitationWithPermissions,
-  InvitationWithStatus,
-} from "../types";
-
-function getInvitationStatus(
-  invitation: InvitationWithPermissions,
-): InvitationStatus {
-  if (invitation.revokedAt) return "REVOKED";
-  if (invitation.acceptedAt) return "ACCEPTED";
-  if (invitation.expiresAt < new Date()) return "EXPIRED";
-  return "PENDING";
-}
+import { InvitationStatus, InvitationWithPermissions } from "../types";
 
 export class InvitationService {
   private readonly invitationRepository: InvitationRepository;
@@ -57,23 +44,13 @@ export class InvitationService {
 
   async listForOrganization(
     organizationId: string,
-  ): Promise<InvitationWithStatus[]> {
-    const invitations =
-      await this.invitationRepository.listForOrganization(organizationId);
-    return invitations.map((invitation) => ({
-      ...invitation,
-      status: getInvitationStatus(invitation),
-    }));
+  ): Promise<InvitationWithPermissions[]> {
+    return this.invitationRepository.listForOrganization(organizationId);
   }
 
   async getByToken(token: string): Promise<InvitationWithPermissions> {
     const invitation = await this.invitationRepository.findByToken(token);
-    if (
-      !invitation ||
-      invitation.acceptedAt ||
-      invitation.revokedAt ||
-      invitation.expiresAt < new Date()
-    ) {
+    if (!invitation || invitation.status !== InvitationStatus.PENDING) {
       throw new NotFoundError("Invalid or expired invitation");
     }
     return invitation;
@@ -84,11 +61,11 @@ export class InvitationService {
     if (!invitation || invitation.organizationId !== organizationId) {
       throw new NotFoundError("Invitation not found");
     }
-    if (invitation.acceptedAt) {
+    if (invitation.status === InvitationStatus.ACCEPTED) {
       throw new ForbiddenError("Cannot revoke an already-accepted invitation");
     }
-    if (invitation.revokedAt) {
-      return;
+    if (invitation.status === InvitationStatus.REVOKED) {
+      throw new ConflictError("Invitation is already revoked");
     }
     await this.invitationRepository.revoke(id);
   }

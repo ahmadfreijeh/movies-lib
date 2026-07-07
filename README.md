@@ -5,6 +5,7 @@ A full-stack movie library application for cataloging, browsing, and managing mo
 ## Tech Stack
 
 **Frontend**
+
 - Next.js 15 (App Router) + TypeScript
 - Tailwind CSS + shadcn/ui
 - React Query for server state
@@ -13,6 +14,7 @@ A full-stack movie library application for cataloging, browsing, and managing mo
 - Zod + React Hook Form for forms
 
 **Backend**
+
 - Node.js 20 + Express + TypeScript
 - Services & Repositories pattern
 - PostgreSQL (via Prisma ORM)
@@ -31,6 +33,7 @@ book-library/
 ## Getting Started
 
 ### Prerequisites
+
 - Node.js 20+
 - PostgreSQL 16+ (or use the provided `docker-compose.yml`)
 
@@ -44,6 +47,27 @@ npm run prisma:migrate
 npm run dev
 ```
 
+Configure `backend/.env`:
+
+| Variable | Description |
+| --- | --- |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `JWT_ACCESS_SECRET` / `JWT_REFRESH_SECRET` | Secrets for signing access/refresh tokens |
+| `JWT_ACCESS_EXPIRES_IN` / `JWT_REFRESH_EXPIRES_IN` | Token lifetimes (defaults: `15m` / `7d`) |
+| `INVITATION_EXPIRES_IN` | How long team invitations remain valid (default: `7d`) |
+| `FRONTEND_URL` | Used for CORS and invitation links |
+| `PORT` | API port (default: `5050`) |
+| `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME`, `R2_PUBLIC_URL` | Cloudflare R2 (S3-compatible) config for media uploads |
+
+Other useful backend scripts:
+
+```bash
+npm run prisma:studio  # browse the database
+npm run prisma:seed    # seed sample data
+npm run build && npm start  # production build/run
+npm run lint
+```
+
 The API runs on `http://localhost:5050`. Interactive API docs (Swagger UI) are available at `http://localhost:5050/api/docs`.
 
 ### Frontend
@@ -55,6 +79,12 @@ npm install
 npm run dev
 ```
 
+Configure `frontend/.env`:
+
+| Variable | Description |
+| --- | --- |
+| `NEXT_PUBLIC_API_URL` | Base URL of the backend API (default: `http://localhost:5050/api`) |
+
 The app runs on `http://localhost:3000`.
 
 ### Docker Compose
@@ -62,6 +92,23 @@ The app runs on `http://localhost:3000`.
 ```bash
 docker-compose up --build
 ```
+
+Spins up PostgreSQL, the backend API, and the frontend together.
+
+## API Routes
+
+All routes are mounted under `/api`. See [backend/docs/API.md](backend/docs/API.md) for full request/response details.
+
+| Base path | Purpose |
+| --- | --- |
+| `/api/auth` | Signup, login, token refresh, current user (`/me`), and invitation acceptance |
+| `/api/movies` | Browse, search, create, update, and delete movies (org-scoped) |
+| `/api/media` | Upload, update, and delete movie media (posters/backdrops via Cloudflare R2) |
+| `/api/users` | List users, manage roles, and manage user-level permissions |
+| `/api/invitations` | Create, list, and revoke team invitations |
+| `/api/genres` | List available genres |
+
+Most mutating endpoints (create/update/delete on movies, media, users, invitations) require authentication via `requireAuth`; browsing endpoints are public.
 
 ## Documentation
 
