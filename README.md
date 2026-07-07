@@ -123,7 +123,7 @@ folder, so pushing a commit only redeploys the service whose folder actually cha
 
 ## API Routes
 
-All routes are mounted under `/api`. See [backend/docs/API.md](backend/docs/API.md) for full request/response details.
+All routes are mounted under `/api`. See [backend/docs/openapi.yaml](backend/docs/openapi.yaml) for full request/response details.
 
 | Base path | Purpose |
 | --- | --- |
@@ -140,4 +140,4 @@ All `/api` routes are rate limited (300 requests / 15 min per IP); auth endpoint
 
 ## Documentation
 
-See [backend/docs/API.md](backend/docs/API.md) for API endpoint documentation, [backend/docs/openapi.yaml](backend/docs/openapi.yaml) for the OpenAPI spec (also served interactively at `/api/docs`), and [DECISIONS.md](DECISIONS.md) for architectural decisions.
+See [backend/docs/openapi.yaml](backend/docs/openapi.yaml) for the OpenAPI spec (also served interactively at `/api/docs`), and [DECISIONS.md](DECISIONS.md) for architectural decisions.
